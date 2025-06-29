@@ -1,14 +1,5 @@
-# Fichiers de build Maven
 /target/
-
-# Fichiers Eclipse
 .classpath
 .project
 .settings/
-.idea/
-
-# Fichiers journaux
 *.log
-
-# Fichiers de configuration utilisateur
-.DS_Store

@@ -7,6 +7,9 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.ResourceBundle;
 
+import org.bytedeco.javacpp.Loader;
+import org.bytedeco.opencv.opencv_java;
+
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
 import org.opencv.imgcodecs.Imgcodecs;
@@ -31,38 +34,29 @@ public class CameraCaptureController implements Initializable {
     private Mainfirstclientcontroller mainController;
     private VideoCapture videoCapture;
     private volatile boolean isStreaming = false;
-    private Mat currentFrameMat; // Pour stocker la frame au moment de la capture
+    private Mat currentFrameMat;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         try {
-            System.loadLibrary(org.opencv.core.Core.NATIVE_LIBRARY_NAME);
+            // Utiliser le chargeur de bytedeco, qui est beaucoup plus fiable.
+        	Loader.load(opencv_java.class);
+            
             videoCapture = new VideoCapture(0); // Ouvre la caméra par défaut
 
             if (!videoCapture.isOpened()) {
-                System.err.println("CameraCaptureController: Impossible d'ouvrir la caméra.");
-                if (mainController != null) { // Peut être null si appelé avant setMainController
-                     mainController.showAlert(Alert.AlertType.ERROR, "Erreur Caméra", "Impossible d'accéder à la caméra.");
-                }
-                Platform.runLater(this::closeWindow); // Fermer si la caméra ne s'ouvre pas
+                showAlertInController(Alert.AlertType.ERROR, "Erreur Caméra", "Impossible d'accéder à la caméra.");
+                Platform.runLater(this::closeWindow);
                 return;
             }
             startStreaming();
-        } catch (UnsatisfiedLinkError e) {
-            System.err.println("CameraCaptureController: Bibliothèque OpenCV non trouvée. " + e.getMessage());
-            if (mainController != null) {
-                mainController.showAlert(Alert.AlertType.ERROR, "Erreur OpenCV", "Bibliothèque OpenCV manquante.");
-            }
-            Platform.runLater(this::closeWindow);
         } catch (Exception e) {
-            System.err.println("CameraCaptureController: Erreur initialisation caméra: " + e.getMessage());
             e.printStackTrace();
-            if (mainController != null) {
-                mainController.showAlert(Alert.AlertType.ERROR, "Erreur Caméra", "Erreur d'initialisation: " + e.getMessage());
-            }
+            showAlertInController(Alert.AlertType.ERROR, "Erreur OpenCV", "Impossible de charger la bibliothèque native OpenCV.");
             Platform.runLater(this::closeWindow);
         }
     }
+    
 
     public void setMainController(Mainfirstclientcontroller controller) {
         this.mainController = controller;
@@ -76,15 +70,13 @@ public class CameraCaptureController implements Initializable {
                 while (isStreaming && videoCapture.isOpened()) {
                     if (videoCapture.read(frame)) {
                         if (!frame.empty()) {
-                            // Stocker la frame actuelle pour la capture
-                            if (currentFrameMat != null) currentFrameMat.release(); // Libérer l'ancienne
-                            currentFrameMat = frame.clone(); // Cloner pour la capture
-
-                            Image fxImage = convertMatToFxImage(frame); // Utiliser la méthode renommée
+                            if (currentFrameMat != null) currentFrameMat.release();
+                            currentFrameMat = frame.clone();
+                            Image fxImage = convertMatToFxImage(frame);
                             Platform.runLater(() -> cameraFrameView.setImage(fxImage));
                         }
                     }
-                    Thread.sleep(33); // Environ 30 FPS
+                    Thread.sleep(33);
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -92,7 +84,6 @@ public class CameraCaptureController implements Initializable {
                 System.err.println("Erreur dans le thread de streaming caméra: " + e.getMessage());
             } finally {
                 if (frame != null) frame.release();
-                // Ne pas relâcher videoCapture ici pour permettre de redémarrer
                 System.out.println("Thread de streaming caméra arrêté.");
             }
         }, "CameraStreamThread").start();
@@ -100,39 +91,29 @@ public class CameraCaptureController implements Initializable {
 
     @FXML
     void handleCaptureImage(ActionEvent event) {
-        isStreaming = false; // Arrêter le thread de streaming
-
+        isStreaming = false;
         if (currentFrameMat != null && !currentFrameMat.empty()) {
             try {
                 MatOfByte matOfByte = new MatOfByte();
                 Imgcodecs.imencode(".png", currentFrameMat, matOfByte);
                 byte[] byteArray = matOfByte.toArray();
                 matOfByte.release();
-
-                // Utiliser le chemin de téléchargement par défaut de AttachmentService
                 String savePath = mainController.attachmentService.getCurrentDefaultDownloadPath();
-                mainController.ensureDirectoryExists(savePath); // S'assurer que le dossier existe
-
+                mainController.ensureDirectoryExists(savePath);
                 File imageFile = File.createTempFile("capture_", ".png", new File(savePath));
                 Files.write(imageFile.toPath(), byteArray);
-
                 if (mainController != null) {
                     mainController.processCapturedImage(imageFile);
                 }
                 closeWindow();
-
             } catch (IOException e) {
                 e.printStackTrace();
-                if (mainController != null) {
-                    mainController.showAlert(Alert.AlertType.ERROR, "Erreur Capture", "Impossible de sauvegarder l'image capturée.");
-                }
+                showAlertInController(Alert.AlertType.ERROR, "Erreur Capture", "Impossible de sauvegarder l'image capturée.");
             } finally {
                  if(currentFrameMat != null) currentFrameMat.release();
             }
         } else {
-            if (mainController != null) {
-                mainController.showAlert(Alert.AlertType.WARNING, "Capture Échouée", "Aucune image à capturer.");
-            }
+            showAlertInController(Alert.AlertType.WARNING, "Capture Échouée", "Aucune image à capturer.");
         }
     }
 
@@ -142,9 +123,9 @@ public class CameraCaptureController implements Initializable {
     }
 
     private void closeWindow() {
-        isStreaming = false; // Arrête le thread
+        isStreaming = false;
         if (videoCapture != null && videoCapture.isOpened()) {
-            videoCapture.release(); // Libérer la caméra
+            videoCapture.release();
             videoCapture = null;
         }
         if (currentFrameMat != null) {
@@ -152,19 +133,35 @@ public class CameraCaptureController implements Initializable {
             currentFrameMat = null;
         }
         Platform.runLater(() -> {
-            Stage stage = (Stage) cameraFrameView.getScene().getWindow();
-            if (stage != null) {
-                stage.close();
+            if (cameraFrameView != null && cameraFrameView.getScene() != null) {
+                Stage stage = (Stage) cameraFrameView.getScene().getWindow();
+                if (stage != null) {
+                    stage.close();
+                }
             }
         });
     }
 
-    private Image convertMatToFxImage(Mat mat) { // Assure-toi que c'est le bon nom
+    private Image convertMatToFxImage(Mat mat) {
         if (mat == null || mat.empty()) return null;
         MatOfByte buffer = new MatOfByte();
         Imgcodecs.imencode(".png", mat, buffer);
         Image image = new Image(new ByteArrayInputStream(buffer.toArray()));
         buffer.release();
         return image;
+    }
+    
+    private void showAlertInController(Alert.AlertType type, String title, String content) {
+        if (mainController != null) {
+            mainController.showAlert(type, title, content);
+        } else {
+            Platform.runLater(() -> {
+                Alert alert = new Alert(type);
+                alert.setTitle(title);
+                alert.setHeaderText(null);
+                alert.setContentText(content);
+                alert.showAndWait();
+            });
+        }
     }
 }

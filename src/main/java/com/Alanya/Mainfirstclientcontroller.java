@@ -4,6 +4,8 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import org.bytedeco.javacpp.Loader;
+import org.bytedeco.opencv.opencv_java;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -50,6 +52,8 @@ import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.TargetDataLine;
 
+import org.bytedeco.javacpp.Loader;
+import org.bytedeco.opencv.opencv_java;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
 import org.opencv.imgcodecs.Imgcodecs;
@@ -755,7 +759,7 @@ public class Mainfirstclientcontroller implements Initializable {
         // Liste d'emojis que vous pouvez personnaliser
         List<String> emojis = List.of(
             "😀", "😂", "😍", "🤔", "😭", "🙏", "👍", "❤️",
-            "😊", "😎", "😢", "😠", "😮", "🎉", "🔥", "💯"
+            "😊", "😎", "😢", "😠", "😮", "�", "🔥", "💯"
         );
 
         int col = 0;
@@ -777,12 +781,11 @@ public class Mainfirstclientcontroller implements Initializable {
         }
     }
     
-    private void insertEmoji(String emoji) {
-        if (messageField != null) {
-            messageField.appendText(emoji);
-        }
-    }
-    
+	 private void insertEmoji(String emoji) {
+	        if (messageField != null) {
+	            messageField.appendText(emoji);
+	        }
+	    }
     
     
     
@@ -813,7 +816,6 @@ public class Mainfirstclientcontroller implements Initializable {
             this.description = description;
         }
     }
-    
     private void initializeEmojiMapping() {
         emojiToFileMap.put("😀", "1f600.png");     // grinning face
         emojiToFileMap.put("😃", "1f603.png");     // grinning face with big eyes
@@ -872,7 +874,6 @@ public class Mainfirstclientcontroller implements Initializable {
         emojiToFileMap.put("👋", "1f44b.png");     // waving hand
         emojiToFileMap.put("👏", "1f44f.png");     // clapping hands
     }
-    
  // Méthode pour charger les emojis disponibles
     private void loadAvailableEmojis() {
         availableEmojis.clear();
@@ -894,17 +895,32 @@ public class Mainfirstclientcontroller implements Initializable {
         return descriptions.getOrDefault(unicode, "Emoji");
     }
 
- // Méthode pour peupler la grille d'emojis avec des images
+    // --- CORRECTION ---
+    // Méthode pour peupler la grille d'emojis avec des images
     private void setupEmojiGrid() {
         if (emojiGridPane == null) return;
         emojiGridPane.getChildren().clear();
+        
+        // Chemin standard vers les ressources emoji
+        final String EMOJI_RESOURCE_PATH = "/com/Alanya/assets/emojis/";
+        
         int columns = 8;
         int row = 0;
         int col = 0;
 
         for (EmojiData emojiData : availableEmojis) {
             try {
-                Image emojiImage = new Image(getClass().getResourceAsStream("/fxmlfiles/png/" + emojiData.fileName));
+                // Construit le chemin complet de la ressource
+                String fullPath = EMOJI_RESOURCE_PATH + emojiData.fileName;
+                InputStream imageStream = getClass().getResourceAsStream(fullPath);
+
+                // Vérifie si la ressource a été trouvée
+                if (imageStream == null) {
+                    System.err.println("Impossible de charger l'image emoji (ressource non trouvée): " + fullPath);
+                    continue; // Passe à l'emoji suivant
+                }
+
+                Image emojiImage = new Image(imageStream);
                 ImageView imageView = new ImageView(emojiImage);
                 imageView.setFitWidth(24);
                 imageView.setFitHeight(24);
@@ -921,7 +937,8 @@ public class Mainfirstclientcontroller implements Initializable {
                     row++;
                 }
             } catch (Exception e) {
-                System.err.println("Impossible de charger l'image emoji : " + emojiData.fileName);
+                System.err.println("Erreur lors de la création du bouton pour l'emoji : " + emojiData.fileName);
+                e.printStackTrace();
             }
         }
     }
@@ -991,7 +1008,6 @@ public class Mainfirstclientcontroller implements Initializable {
         }
     }
 
-
     @FXML
     void handleSupport(ActionEvent event) {
         showAlert(AlertType.INFORMATION, "Service Client", "Pour toute assistance, veuillez contacter le support à l'adresse : support@alanya.com.");
@@ -1032,42 +1048,52 @@ public class Mainfirstclientcontroller implements Initializable {
 	}
 	
 	// Méthode pour créer le contenu du message (gère le texte et les emojis)
-	private Node createMessageContentNode(String content) {
-	    TextFlow textFlow = new TextFlow();
-	    String emojiRegex = emojiToFileMap.keySet().stream()
-	        .map(Pattern::quote)
-	        .collect(Collectors.joining("|"));
+		private Node createMessageContentNode(String content) {
+		    TextFlow textFlow = new TextFlow();
+		    final String EMOJI_RESOURCE_PATH = "/com/Alanya/assets/emojis/";
 
-	    Pattern emojiPattern = Pattern.compile(emojiRegex);
-	    Matcher matcher = emojiPattern.matcher(content);
+		    String emojiRegex = emojiToFileMap.keySet().stream()
+		        .map(Pattern::quote)
+		        .collect(Collectors.joining("|"));
 
-	    int lastEnd = 0;
-	    while (matcher.find()) {
-	        if (matcher.start() > lastEnd) {
-	            textFlow.getChildren().add(new Text(content.substring(lastEnd, matcher.start())));
-	        }
-	        String emojiUnicode = matcher.group();
-	        String emojiFileName = emojiToFileMap.get(emojiUnicode);
-	        try {
-	            Image emojiImage = new Image(getClass().getResourceAsStream("/png/" + emojiFileName));
-	            ImageView emojiView = new ImageView(emojiImage);
-	            emojiView.setFitHeight(20);
-	            emojiView.setFitWidth(20);
-	            textFlow.getChildren().add(emojiView);
-	        } catch (Exception e) {
-	            textFlow.getChildren().add(new Text(emojiUnicode));
-	        }
-	        lastEnd = matcher.end();
-	    }
+		    Pattern emojiPattern = Pattern.compile(emojiRegex);
+		    Matcher matcher = emojiPattern.matcher(content);
 
-	    if (lastEnd < content.length()) {
-	        textFlow.getChildren().add(new Text(content.substring(lastEnd)));
-	    }
-	    return textFlow;
-	}
+		    int lastEnd = 0;
+		    while (matcher.find()) {
+		        if (matcher.start() > lastEnd) {
+		            textFlow.getChildren().add(new Text(content.substring(lastEnd, matcher.start())));
+		        }
+		        String emojiUnicode = matcher.group();
+		        String emojiFileName = emojiToFileMap.get(emojiUnicode);
+		        try {
+		            String fullPath = EMOJI_RESOURCE_PATH + emojiFileName;
+		            InputStream imageStream = getClass().getResourceAsStream(fullPath);
 
+		            if (imageStream == null) {
+		                System.err.println("Emoji non trouvé pour affichage dans message: " + fullPath);
+		                textFlow.getChildren().add(new Text(emojiUnicode)); // Fallback: affiche l'emoji texte
+		                continue;
+		            }
+		            
+		            Image emojiImage = new Image(imageStream);
+		            ImageView emojiView = new ImageView(emojiImage);
+		            emojiView.setFitHeight(20);
+		            emojiView.setFitWidth(20);
+		            textFlow.getChildren().add(emojiView);
+		        } catch (Exception e) {
+		            System.err.println("Erreur affichage emoji dans message: " + emojiFileName);
+		            textFlow.getChildren().add(new Text(emojiUnicode)); // Fallback en cas d'erreur
+		        }
+		        lastEnd = matcher.end();
+		    }
 
- // Dans Mainfirstclientcontroller.java
+		    if (lastEnd < content.length()) {
+		        textFlow.getChildren().add(new Text(content.substring(lastEnd)));
+		    }
+		    return textFlow;
+		}
+
 
     private void updateSendButtonState(String text, boolean attachmentIsPending) {
         if (sendMessageButton == null) {
@@ -4230,7 +4256,7 @@ public class Mainfirstclientcontroller implements Initializable {
 	    
 	    // CORRECTION : Gestion d'erreur pour la bibliothèque OpenCV
 	    try {
-	        System.loadLibrary(org.opencv.core.Core.NATIVE_LIBRARY_NAME);
+	    	Loader.load(opencv_java.class);
 	    } catch (UnsatisfiedLinkError e) {
 	        System.err.println("VID_STREAM: Impossible de charger la bibliothèque native OpenCV: " + e.getMessage());
 	        Platform.runLater(() -> {
