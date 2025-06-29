@@ -1,0 +1,610 @@
+/* alanya.css */
+
+.main-container {
+    -fx-font-family: "System"; /* Ou une police de votre choix */
+}
+
+.sidebar {
+    -fx-background-color: #2C3E50; /* Bleu foncé / Gris ardoise */
+    -fx-padding: 15px;
+}
+
+.sidebar .label { /* Labels dans la sidebar, ex: "Discussions" */
+    -fx-text-fill: #ECF0F1; /* Blanc cassé / Gris clair */
+    -fx-font-size: 1.2em;
+    -fx-padding-bottom: 10px;
+}
+.sidebar .text-field { /* Champ de recherche */
+    -fx-prompt-text-fill: #BDC3C7; /* Gris pour le placeholder */
+    -fx-background-color: #34495E; /* Un peu plus clair que le fond de la sidebar */
+    -fx-text-fill: #ECF0F1; /* Texte saisi en blanc cassé */
+    -fx-border-color: #2C3E50; /* Bordure de la même couleur que le fond pour un effet subtil */
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-padding: 8px;
+    -fx-margin-bottom: 10px;
+}
+
+/* Styles pour la liste des contacts */
+.contact-list .list-cell {
+    -fx-background-color: #34495E; /* Fond de cellule normal (Gris ardoise un peu plus clair) */
+    -fx-padding: 8px 5px;
+    -fx-border-color: transparent transparent #2C3E50 transparent; /* Ligne de séparation plus foncée */
+    -fx-border-width: 1px;
+}
+
+.contact-list .list-cell:empty { /* Cacher les cellules vides */
+	-fx-background-color: #2C3E50; 
+	-fx-border-color: transparent
+}
+
+.contact-list .list-cell .label { /* Labels de nom dans la liste des contacts */
+    -fx-text-fill: #ECF0F1; /* Blanc cassé pour le texte */
+    -fx-font-size: 1em;
+}
+
+.contact-list .list-cell:filled:hover {
+    -fx-background-color: #4A6C8C; /* Un bleu-gris moyen pour le survol */
+    -fx-text-fill: white;
+}
+.contact-list .list-cell:filled:hover .label,
+.contact-list .list-cell:filled:hover .ikonli-font-icon { /* Assurez-vous d'avoir un style pour .ikonli-font-icon si vous l'utilisez */
+    -fx-text-fill: white;
+}
+
+.contact-list .list-cell:filled:selected, 
+.contact-list .list-cell:filled:selected:hover {
+    -fx-background-color: #3498DB; /* Bleu pour la sélection */
+    -fx-text-fill: white;
+}
+.contact-list .list-cell:filled:selected .label,
+.contact-list .list-cell:filled:selected .ikonli-font-icon {
+    -fx-text-fill: white; /* Texte en blanc sur fond bleu */
+}
+
+.contact-list .list-cell .ikonli-font-icon { /* Icônes de statut dans la liste */
+     -fx-fill: #ECF0F1; /* Couleur par défaut pour les icônes de statut */
+}
+
+
+.sidebar .button { /* Boutons en bas de la sidebar (style par défaut pour "Nouveau Contact") */
+    -fx-background-color: #3498DB; /* Bleu */
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 5px;
+    -fx-padding: 10px 15px;
+    -fx-margin-top: 8px;
+    -fx-cursor: hand;
+}
+.sidebar .button:hover {
+    -fx-background-color: #2980B9; /* Bleu plus foncé au survol */
+}
+
+/* Bouton de déconnexion plus spécifique */
+.sidebar .button.btn-danger {
+    -fx-background-color: #E74C3C; /* Rouge */
+}
+.sidebar .button.btn-danger:hover {
+    -fx-background-color: #C0392B; /* Rouge plus foncé */
+}	
+.btn-microphone { /* Nouveau bouton microphone */
+	-fx-background-color: #2ECC71; /* Vert */
+	-fx-text-fill: white;
+	-fx-font-size: 1.3em; /* Taille de l'icône "➤" */
+	-fx-padding: 8px 12px;
+	-fx-background-radius: 50%; /* Rond */
+	-fx-min-width: 40px; -fx-min-height: 40px; /* Assurer une taille minimale cliquable */
+	}
+.btn-microphone:hover {
+	    -fx-background-color: #27AE60; /* Vert plus foncé */
+	}
+.btn-send-recording { /* Nouveau bouton envoyer enregistrement */
+
+	-fx-background-color: #C0392B; /* Vert */
+	-fx-text-fill: white;
+	-fx-font-size: 1.3em; /* Taille de l'icône "➤" */
+	-fx-padding: 8px 12px;
+	-fx-background-radius: 50%; /* Rond */
+	-fx-min-width: 40px; -fx-min-height: 40px; /* Assurer une taille minimale cliquable */
+	}
+
+/* --- Zone de Chat --- */
+.chat-container {
+    -fx-background-color: #FFFFFF; /* Fond Blanc Vif pour la zone de chat */
+}
+
+.chat-header {
+    -fx-background-color: #FFFFFF; /* Fond blanc pour l'en-tête */
+    -fx-padding: 10px 15px;
+    -fx-border-color: transparent transparent #BDC3C7 transparent; /* Bordure inférieure grise */
+    -fx-border-width: 1px;
+}
+.chat-header .label { /* Nom du contact dans l'en-tête */
+    -fx-font-size: 1.3em;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2C3E50; /* Texte en couleur foncée */
+}
+.icons-button {
+    -fx-background-color: transparent;
+    -fx-padding: 6px;
+    -fx-background-radius: 50%; /* Rend le bouton parfaitement rond */
+    -fx-cursor: hand;
+}
+
+.icons-button:hover {
+    -fx-background-color: #EAEAEA; /* Légère surbrillance au survol */
+}
+.profile-section-header {
+    -fx-font-size: 0.9em;
+    -fx-text-fill: #BDC3C7; /* Gris clair */
+    -fx-font-style: italic;
+    -fx-padding: 5px 0 5px 5px; /* Espace autour du texte */
+}
+.icons-button:pressed {
+    -fx-background-color: #D0D0D0;
+}
+.btn-icon { /* Style de base pour les boutons icônes (retour, appel, menu) */
+    -fx-background-color: transparent;
+    -fx-padding: 5px;
+    -fx-font-size: 1.5em; /* Taille de l'icône/texte du bouton */
+    -fx-text-fill: #3498DB; /* Bleu pour les icônes */
+    -fx-cursor: hand;
+}
+.btn-icon:hover {
+    -fx-background-color: #E0E0E0; /* Léger fond au survol */
+    -fx-background-radius: 50%; /* Rond */
+}
+
+/* Style pour le nouveau MenuButton dans la sidebar */
+.sidebar-menu-button {
+    -fx-background-color: #4A6C8C; /* Une couleur qui se marie bien, différente des autres boutons */
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 5px;
+    -fx-padding: 8px 12px;
+    -fx-alignment: center-left; /* Aligne le texte à gauche */
+    -fx-cursor: hand;
+}
+
+/* Change la couleur de la petite flèche du MenuButton en blanc */
+.sidebar-menu-button .arrow {
+    -fx-background-color: white;
+}
+
+.sidebar-menu-button:hover {
+    -fx-background-color: #5a7f9c; /* Un peu plus clair au survol */
+}
+.messages-scroll-pane {
+    -fx-background-color: transparent; /* Le fond vient du chat-container */
+    -fx-padding: 0; /* Pas de padding pour le scrollpane lui-même */
+}
+.messages-container { /* VBox contenant les bulles de message */
+    -fx-padding: 15px; /* Espacement autour des messages */
+    -fx-spacing: 10px; /* Espacement entre les bulles de message */
+
+	-fx-background-image: url("imgdisc.png");
+	-fx-background-size: 80%;
+	-fx-min-height: 500px; 
+}
+
+/* Styles pour les bulles de message */
+.message-bubble-outgoing, .message-bubble-incoming {
+    -fx-padding: 8px 12px;
+    -fx-max-width: 65%;
+    -fx-min-width: 140px; /* MODIFICATION : Changé de 80px à 140px */
+}
+.message-bubble-outgoing {
+    -fx-background-color: #DCF8C6;
+    -fx-background-radius: 15 15 0 15; /* Coins arrondis sauf en bas à gauche */
+}
+.message-bubble-incoming {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 15 15 15 0; /* Coins arrondis sauf en bas à droite */
+    -fx-border-color: #E0E0E0; 
+    -fx-border-width: 1px; 
+    -fx-border-radius: 15 15 15 0; /* Important : le rayon de la bordure doit correspondre à celui du fond */
+}
+
+.message-bubble-content {
+    -fx-spacing: 3px; /* Espace vertical entre le texte et l'heure */
+}
+
+.message-bubble-content > .label { 
+    -fx-wrap-text: true; 
+    -fx-min-width: 0; 
+}
+.message-bubble-content .time-label {
+    -fx-font-size: 0.8em; 
+	-fx-text-fill: #777; 
+	-fx-padding: 3 0 0 0;
+}
+
+.message-bubble-outgoing.media-message-bubble,
+.message-bubble-incoming.media-message-bubble {
+    -fx-pref-width: 300px;
+    -fx-min-width: 300px;
+    -fx-max-width: 300px;
+    -fx-alignment: center-left; /* Pour aligner le contenu de la bulle média à gauche */
+}
+
+.message-bubble-outgoing.voice-message-bubble,
+.message-bubble-incoming.voice-message-bubble {
+    -fx-pref-width: 300px; /* Largeur PRÉFÉRÉE et FIXE pour les messages vocaux */
+    -fx-min-width: 300px;  /* Assure qu'elle ne sera pas plus petite */
+    -fx-max-width: 300px;  /* Assure qu'elle ne sera pas plus grande */
+}
+
+.message-input-container { /* VBox en bas pour la saisie */
+    -fx-background-color: #F8F9FA; /* Fond légèrement gris */
+    -fx-border-color: #BDC3C7 transparent transparent transparent; /* Bordure supérieure */
+    -fx-border-width: 1px;
+}
+/*STYLES POUR LES EMOJIS */
+.emoji-grid-pane {
+    -fx-background-color: #f8f9fa; /* Même couleur que le fond de la saisie */
+    -fx-padding: 10px;
+    -fx-hgap: 5; /* Espacement horizontal entre les emojis */
+    -fx-vgap: 5; /* Espacement vertical */
+    -fx-border-color: #e0e0e0 transparent transparent transparent; /* Bordure haute subtile */
+    -fx-border-width: 1px;
+}
+
+.emoji-button {
+    -fx-background-color: transparent;
+    -fx-font-size: 22px; /* Grande taille pour bien voir l'emoji */
+    -fx-padding: 2px;
+    -fx-background-radius: 5px;
+    -fx-cursor: hand;
+}
+
+.emoji-button:hover {
+    -fx-background-color: #e0e0e0; /* Surbrillance au survol */
+}
+.message-input-box { /* HBox contenant champ de texte et boutons */
+    -fx-padding: 8px 15px;
+    -fx-spacing: 10px; /* Espacement entre les éléments */
+}
+.message-field {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #BDC3C7;
+    -fx-border-radius: 20px;
+    -fx-background-radius: 20px;
+    -fx-padding: 10px 15px;
+    -fx-font-size: 1em;
+}
+.transparent-text-field {
+    -fx-background-color: transparent;
+    /* On rend le texte totalement transparent, car notre curseur est maintenant manuel */
+    -fx-text-fill: transparent;
+    -fx-prompt-text-fill: #A0A0A0;
+}
+
+/* Style pour le TextFlow qui affichera le contenu visuel */
+.rich-text-display {
+    -fx-padding: 10px 15px;
+}
+.btn-send { /* Bouton d'envoi */
+    -fx-background-color: #2ECC71; /* Vert */
+    -fx-text-fill: white;
+    -fx-font-size: 1.3em; /* Taille de l'icône "➤" */
+    -fx-padding: 8px 12px;
+    -fx-background-radius: 50%; /* Rond */
+    -fx-min-width: 40px; -fx-min-height: 40px; /* Assurer une taille minimale cliquable */
+}
+.btn-send:hover {
+    -fx-background-color: #27AE60; /* Vert plus foncé */
+}
+.status-label { /* Label de statut sous la zone de saisie */
+    -fx-padding: 5px 15px;
+    -fx-font-size: 0.9em;
+    -fx-text-fill: #7F8C8D;
+}
+
+/* Styles pour les pièces jointes */
+.attachment-preview-pane { /* HBox pour la prévisualisation du fichier à envoyer */
+    -fx-padding: 5px 15px 0px 15px; /* Padding au-dessus de la zone de saisie */
+    -fx-spacing: 8px;
+    -fx-alignment: center-left;
+}
+.attachment-preview-pane .label {
+    -fx-font-style: italic;
+    -fx-text-fill: #34495E;
+}
+.attachment-preview-pane .button { /* Bouton "X" pour annuler */
+    -fx-background-color: transparent;
+    -fx-text-fill: #E74C3C; /* Rouge */
+    -fx-font-weight: bold;
+    -fx-padding: 2px 6px;
+    -fx-cursor: hand;
+}
+.attachment-preview-pane .button:hover {
+    -fx-background-color: #F5B7B1; /* Léger fond rouge au survol */
+    -fx-background-radius: 3px;
+}
+
+.attachment-box { /* VBox pour une pièce jointe dans une bulle de message */
+    -fx-padding: 8px;
+    -fx-background-color: #f0f0f0; /* Fond légèrement différent pour la pièce jointe */
+    -fx-border-color: #d0d0d0;
+    -fx-border-width: 1px;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-spacing: 5px; /* Espacement entre nom de fichier et bouton */
+    -fx-margin-top: 5px; /* Marge par rapport au texte du message */
+}
+
+.file-action-button { /* Style de base pour les boutons Télécharger/Ouvrir */
+    -fx-text-fill: white;
+    -fx-padding: 5px 10px;
+    -fx-font-size: 0.9em; 
+    -fx-background-radius: 3px;
+    -fx-cursor: hand;
+    -fx-graphic-text-gap: 5px; 
+}
+
+.download-button {
+    -fx-background-color: #3498DB; /* Bleu pour télécharger */
+}
+.download-button:hover {
+    -fx-background-color: #2980B9;
+}
+.download-button .ikonli-font-icon { 
+    -fx-fill: white;
+}
+
+.open-button {
+    -fx-background-color: #2ECC71; /* Vert pour ouvrir */
+}
+.open-button:hover {
+    -fx-background-color: #27AE60;
+}
+.open-button .ikonli-font-icon { 
+    -fx-fill: white;
+}
+
+.file-action-error-button { 
+    -fx-background-color: #E74C3C; /* Rouge */
+}
+.file-action-error-button:hover {
+    -fx-background-color: #C0392B;
+}
+.file-action-error-button .ikonli-font-icon {
+    -fx-fill: white;
+}
+
+
+.attachment-box .label { 
+    -fx-text-fill: #333333;
+}
+.attachment-box .ikonli-font-icon { 
+    -fx-fill: #555555; 
+}
+
+.progress-indicator {
+    -fx-progress-color: #3498DB; 
+    -fx-max-width: 100px; 
+    -fx-max-height: 15px;
+}
+
+
+/* Style de base pour toutes les barres de défilement */
+.scroll-bar > .track-background {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+}
+
+.scroll-bar > .thumb {
+    -fx-background-color: transparent;
+    -fx-background-insets: 2;
+    -fx-background-radius: 4; /* Coins légèrement arrondis */
+}
+
+/* Style pour les flèches (peut les cacher complètement si non désiré) */
+.scroll-bar > .increment-button,
+.scroll-bar > .decrement-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-padding: 0;
+    -fx-opacity: 0; /* Cache les flèches par défaut */
+}
+
+.scroll-bar > .increment-button > .increment-arrow,
+.scroll-bar > .decrement-button > .decrement-arrow {
+    -fx-background-color: transparent; /* Cache les flèches par défaut */
+}
+
+/* Apparition au survol du ScrollPane ou ListView */
+.scroll-pane:hover > .scroll-bar:vertical > .thumb,
+.list-view:hover > .scroll-bar:vertical > .thumb,
+.scroll-pane:hover > .scroll-bar:horizontal > .thumb,
+.list-view:hover > .scroll-bar:horizontal > .thumb {
+    -fx-background-color: #B0BEC5; /* Gris clair pour le pouce au survol du conteneur */
+    -fx-opacity: 0.7;
+}
+
+.scroll-pane:hover > .scroll-bar:vertical > .track-background,
+.list-view:hover > .scroll-bar:vertical > .track-background,
+.scroll-pane:hover > .scroll-bar:horizontal > .track-background,
+.list-view:hover > .scroll-bar:horizontal > .track-background {
+    -fx-background-color: #ECEFF1; /* Fond de piste très clair au survol du conteneur */
+    -fx-opacity: 0.5;
+}
+
+
+/* Style renforcé lorsque la souris est sur le pouce (scrolling actif) */
+.scroll-bar:vertical > .thumb:hover,
+.scroll-bar:horizontal > .thumb:hover {
+    -fx-background-color: #78909C; /* Gris plus foncé et renforcé */
+    -fx-background-radius: 6px; /* Plus arrondi */
+    -fx-opacity: 1.0;
+}
+
+.scroll-bar:vertical > .thumb:pressed,
+.scroll-bar:horizontal > .thumb:pressed {
+    -fx-background-color: #546E7A; /* Gris encore plus foncé lorsque pressé */
+    -fx-opacity: 1.0;
+}
+
+/* Optionnel: faire réapparaître les flèches au survol de la barre de scroll */
+.scroll-bar:hover > .increment-button,
+.scroll-bar:hover > .decrement-button {
+    -fx-opacity: 0.6; /* Rend les flèches visibles au survol de la barre */
+}
+.scroll-bar:hover > .increment-button > .increment-arrow,
+.scroll-bar:hover > .decrement-button > .decrement-arrow {
+    -fx-background-color: #78909C; /* Couleur pour les flèches */
+}
+
+/* Assurer que les barres de défilement de la ListView et du ScrollPane utilisent ces styles */
+.contact-list.list-view .scroll-bar:vertical,
+.contact-list.list-view .scroll-bar:horizontal,
+.messages-scroll-pane.scroll-pane .scroll-bar:vertical,
+.messages-scroll-pane.scroll-pane .scroll-bar:horizontal {
+    -fx-background-color: transparent; /* Nécessaire pour que le :hover sur le parent fonctionne bien */
+}
+
+/* --- NOUVEAUX STYLES POUR LA FONCTIONNALITÉ VOCALE --- */
+.voice-message-box {
+    -fx-padding: 5px 0 0 0; /* Espace au-dessus des contrôles vocaux */
+    -fx-spacing: 5px; /* Espace entre le titre, la méta-info, et les contrôles */
+    /* Pas de fond ici, il vient de .message-bubble-outgoing/incoming */
+}
+
+.voice-title-label {
+    -fx-font-size: 1em; /* Taille standard pour "Message vocal" */
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333; /* Couleur de texte sombre */
+}
+
+.voice-meta-label { /* Pour la durée statique et la taille */
+    -fx-font-size: 0.8em;
+    -fx-text-fill: #666666; /* Gris un peu plus foncé pour ces infos */
+}
+.voice-duration-static {
+    /* Style spécifique si besoin pour la durée statique, sinon .voice-meta-label suffit */
+}
+.voice-size-label {
+    /* Style spécifique si besoin pour la taille, sinon .voice-meta-label suffit */
+}
+
+.voice-message-box .button { /* Bouton Play/Pause/Download */
+    -fx-background-color: #bdc3c7; /* Gris un peu plus clair pour les boutons */
+    -fx-text-fill: #2c3e50; /* Texte/Emoji plus foncé pour contraster */
+    -fx-font-family: "Segoe UI Emoji", "Apple Color Emoji", "Segoe UI Symbol", sans-serif;
+    -fx-font-size: 1.2em; /* Taille pour les emojis ▶️ ⏸️ ⬇️ ⏳ ⚠️ */
+    -fx-padding: 5px 8px;
+    -fx-background-radius: 20px;
+    -fx-min-width: 32px;
+    -fx-min-height: 32px;
+    -fx-cursor: hand;
+}
+.voice-message-box .button:hover {
+    -fx-background-color: #95a5a6;
+}
+.voice-message-box .button:disabled {
+    -fx-opacity: 0.7;
+}
+
+.voice-message-box .progress-bar {
+    -fx-pref-width: 100px; /* Ajuste pour qu'il rentre bien avec la durée */
+    -fx-accent: #27ae60; /* Vert pour la progression */
+    -fx-max-height: 8px;
+    -fx-pref-height: 8px;
+}
+.voice-message-box .progress-bar .bar {
+    -fx-background-color: linear-gradient(to right, #27ae60, #2ecc71);
+    -fx-background-insets: 1px;
+    -fx-padding: 1px;
+    -fx-background-radius: 2px;
+}
+.voice-message-box .progress-bar .track {
+    -fx-background-color: #ecf0f1; /* Fond de la piste clair */
+    -fx-background-insets: 1px;
+    -fx-background-radius: 2px;
+}
+
+.voice-playback-time-label { /* Pour le "00:00 / 01:23" dynamique */
+    -fx-font-size: 0.8em;
+    -fx-text-fill: #7f8c8d;
+    -fx-padding: 0 0 0 5px; /* Un peu d'espace à gauche */
+}
+
+/* NOUVEAU: Styles pour le bouton "Plus" et sa popup */
+.btn-more-options {
+    -fx-background-color: transparent;
+    -fx-padding: 5px 8px;
+    -fx-font-family: "Segoe UI Emoji", "Apple Color Emoji", "Segoe UI Symbol", sans-serif;
+    -fx-font-size: 1.4em;
+    -fx-text-fill: #546E7A;
+    -fx-cursor: hand;
+}
+.btn-more-options:hover {
+    -fx-background-color: #ECEFF1;
+    -fx-background-radius: 50%;
+}
+
+.attachment-options-popup {
+    -fx-background-color: white;
+    -fx-padding: 10px;
+    -fx-border-color: #B0BEC5;
+    -fx-border-width: 1px;
+    -fx-background-radius: 6px;
+    -fx-border-radius: 6px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 8, 0, 1, 2);
+    -fx-spacing: 8px;
+}
+
+.attachment-options-popup .button {
+    -fx-background-color: #f4f4f4;
+    -fx-text-fill: #2c3e50;
+    -fx-pref-width: 140px;
+    -fx-alignment: center-left;
+    -fx-padding: 8px 12px;
+    -fx-graphic-text-gap: 10px;
+    -fx-font-size: 0.9em;
+    -fx-font-weight: normal;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+}
+.attachment-options-popup .button:hover {
+    -fx-background-color: #e9e9e9;
+}
+
+
+/* NOUVEAU: Styles pour l'affichage d'image dans la bulle */
+/* Affichage image dans bulle */
+.image-attachment-box {
+    -fx-padding: 0;
+    -fx-alignment: center;
+    -fx-cursor: hand;
+}
+.chat-image-preview {
+    -fx-background-color: #f4f4f4;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.08), 4, 0, 1, 1);
+    -fx-smooth: true;
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+}
+.image-meta-info {
+    -fx-padding: 2px 5px;
+    -fx-background-color: rgba(0,0,0,0.02);
+}
+.image-meta-info .label {
+    -fx-font-size: 0.75em;
+    -fx-text-fill: #555;
+}
+/* NOUVEAU: Styles pour les indicateurs de statut de lecture */
+.message-status-indicator {
+    -fx-font-family: "Segoe UI Emoji", "Apple Color Emoji", "Segoe UI Symbol", sans-serif;
+    -fx-font-size: 0.9em;
+    -fx-text-fill: #95a5a6; /* Gris par défaut (envoyé) */
+    -fx-padding: 0 0 0 4px;
+}
+.message-status-indicator.delivered { /* Classe à ajouter si le message est confirmé reçu par le peer/serveur */
+    -fx-text-fill: #78909C; /* Gris un peu plus foncé pour reçu */
+}
+.message-status-indicator.read { /* Classe à ajouter si message lu */
+    -fx-text-fill: #3498DB; /* Bleu pour lu */
+}

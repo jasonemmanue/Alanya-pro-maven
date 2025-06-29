@@ -1,0 +1,214 @@
+/* styles.css */
+
+/* Style global pour la racine de la scène (optionnel, pour un fond général) */
+.root {
+    -fx-background-color: #2E3440; /* Un fond sombre pour le thème chat */
+    -fx-font-family: "Arial", sans-serif; /* Police par défaut */
+}
+
+/* Style pour les conteneurs SplitPane */
+.call-split-pane > .split-pane-divider {
+    -fx-background-color: #4C566A; /* Couleur du séparateur */
+    -fx-padding: 0.5px; /* Épaisseur du séparateur */
+}
+
+/* Style pour les panneaux gauche et droit dans le SplitPane */
+.call-pane-left, .call-pane-right {
+    -fx-background-color: #3B4252; /* Fond légèrement plus clair pour les panneaux */
+    -fx-padding: 20px;
+    -fx-alignment: center;
+    -fx-border-color: #4C566A; /* Bordure subtile */
+    -fx-border-width: 0 0.5px 0 0.5px; /* Bordure uniquement sur les côtés du séparateur */
+}
+
+.call-pane-left {
+    /* Aucune bordure à gauche pour le premier panneau */
+    -fx-border-width: 0 0.5px 0 0;
+}
+
+
+
+.call-pane-right {
+    /* Aucune bordure à droite pour le second panneau */
+    -fx-border-width: 0 0 0 0.5px;
+}
+
+
+/* Style pour les labels d'information */
+.info-label {
+    -fx-font-size: 16px;
+    -fx-text-fill: #D8DEE9; /* Texte clair */
+}
+
+.contact-name-label {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ECEFF4; /* Texte blanc cassé */
+}
+
+/* Style pour les conteneurs des vidéos (simples panneaux pour l'instant) */
+.video-pane {
+    -fx-background-color: #20242E; /* Fond très sombre pour simuler un affichage vidéo */
+    -fx-border-color: #4C566A;
+    -fx-border-width: 1px;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+}
+
+.video-label {
+    -fx-font-size: 14px;
+    -fx-text-fill: #A3B2CC;
+    -fx-background-color: rgba(46, 52, 64, 0.7); /* Fond semi-transparent pour le label */
+    -fx-padding: 5px 10px;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+}
+
+/* Style pour la section des contrôles en bas */
+.bottom-controls {
+    -fx-background-color: #3B4252; /* Correspond aux panneaux pour une apparence intégrée */
+    -fx-padding: 15px;
+}
+
+/* Style pour le bouton Raccrocher */
+.hang-up-button {
+    -fx-background-color: #BF616A; /* Rouge */
+    -fx-text-fill: white;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-padding: 15px 30px; /* Bouton plus gros */
+    -fx-background-radius: 25px; /* Coins arrondis */
+    -fx-border-radius: 25px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0.5, 2, 2); /* Ombre portée */
+}
+
+.hang-up-button:hover {
+    -fx-background-color: #D08770; /* Rouge plus clair au survol */
+}
+
+.hang-up-button:pressed {
+    -fx-background-color: #A95058; /* Rouge plus sombre lorsque pressé */
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0.2, 1, 1);
+}
+
+/* Style pour le bouton Couper Son (ToggleButton) */
+.mute-button {
+    -fx-background-color: #81A1C1; /* Bleu clair */
+    -fx-text-fill: #2E3440; /* Texte sombre */
+    -fx-font-size: 16px;
+    -fx-padding: 10px 20px;
+    -fx-background-radius: 20px;
+    -fx-border-radius: 20px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 8, 0.4, 1, 1);
+}
+
+.mute-button:hover {
+    -fx-background-color: #8FBCBB; /* Couleur alternative au survol */
+}
+
+.mute-button:selected {
+    -fx-background-color: #A3BE8C; /* Vert lorsque sélectionné (son coupé) */
+    -fx-text-fill: white;
+}
+
+.mute-button:selected:hover {
+    -fx-background-color: #B3D29F;
+}
+
+
+
+
+/* style.css  pour edit contact list view*/
+
+/* Style pour le conteneur VBox racine de la fenêtre/dialogue */
+.root { /* '.root' cible l'élément racine du FXML chargé */
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #E8EAF6, #C5CAE9); /* Dégradé doux et professionnel (lavande clair à indigo pastel) */
+    /* Alternative: un fond texturé subtil (nécessite une image) */
+    /* -fx-background-image: url("votre_texture_subtile.png"); */
+    /* -fx-background-repeat: repeat; */
+    -fx-padding: 30px; /* Augmenter le padding interne pour plus d'aération */
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 15, 0.5, 0, 2); /* Ombre portée plus prononcée */
+    -fx-border-color: derive(#C5CAE9, -20%);
+    -fx-border-width: 1px;
+    -fx-border-radius: 10px;
+    -fx-background-radius: 10px;
+}
+
+/* Style pour le Label de titre (premier Label dans la VBox racine) */
+.root > Label:first-child {
+    -fx-font-size: 22px; /* Taille de police augmentée */
+    -fx-font-weight: bold;
+    -fx-text-fill: #3F51B5; /* Indigo foncé pour le titre */
+    -fx-padding: 0 0 20px 0; /* Espacement sous le titre */
+    -fx-alignment: center-left; /* S'assurer de l'alignement si VBox racine est centré */
+}
+
+/* Styles pour les Labels des champs de formulaire */
+.root VBox > Label { /* Cible les Labels qui sont enfants directs d'un VBox (nos sections de formulaire) */
+    -fx-font-size: 14px;
+    -fx-text-fill: #455A64; /* Gris-bleu foncé pour une bonne lisibilité */
+    -fx-padding: 10px 0 5px 0; /* Espacement au-dessus et un peu en dessous */
+}
+
+/* Styles pour les TextField (par fx:id et type pour couvrir tous les cas) */
+#oldNameField, #usernameField, #phoneField,
+.root VBox > TextField { /* Style générique pour les TextField non ciblés par ID */
+    -fx-font-size: 15px;
+    -fx-pref-height: 42px;
+    -fx-background-color: #FFFFFF, linear-gradient(from 0px 0px to 0px 5px, derive(#B0BEC5, -5%), #B0BEC5); /* Effet subtil de bordure interne haute */
+    -fx-background-insets: 0, 0 0 1 0; /* Le dégradé est pour la bordure basse */
+    -fx-background-radius: 6px;
+    -fx-border-color: #CFD8DC; /* Bordure gris très clair */
+    -fx-border-width: 1px;
+    -fx-border-radius: 5px;
+    -fx-padding: 8px 12px;
+    -fx-prompt-text-fill: #90A4AE;
+    -fx-text-fill: #263238; /* Texte saisi en couleur foncée */
+}
+
+#oldNameField:focused, #usernameField:focused, #phoneField:focused,
+.root VBox > TextField:focused {
+    -fx-border-color: #3F51B5; /* Bordure Indigo au focus */
+    -fx-background-color: #FFFFFF; /* S'assurer que le fond reste blanc au focus */
+    -fx-effect: dropshadow(gaussian, rgba(63, 81, 181, 0.3), 6, 0, 0, 0); /* Légère lueur indigo */
+}
+
+/* Champs non éditables (comme oldNameField, phoneField) */
+#oldNameField[editable="false"],
+#phoneField[editable="false"] {
+    -fx-background-color: #ECEFF1, linear-gradient(from 0px 0px to 0px 5px, derive(#CFD8DC, -5%), #CFD8DC);
+    -fx-opacity: 0.7;
+    -fx-text-fill: #546E7A; /* Texte un peu plus clair pour indiquer la non-édition */
+}
+
+
+/* Styles pour les boutons dans la HBox en bas */
+/* Bouton Enregistrer */
+#registerButton {
+    -fx-background-color: #4CAF50; /* Vert (surcharge le style en ligne grâce à l'ID) */
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-padding: 10px 25px;
+    -fx-background-radius: 20px; /* Plus arrondi */
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 5, 0.0, 0, 1);
+}
+#registerButton:hover {
+    -fx-background-color: #388E3C; /* Vert plus foncé au survol */
+}
+
+/* Bouton Annuler (le cibler comme le deuxième bouton dans la HBox) */
+.root > HBox > Button:last-child { /* Supposant que c'est le dernier bouton dans la HBox */
+    -fx-background-color: #F44336; /* Rouge (surcharge le style en ligne) */
+    -fx-text-fill: white;
+    -fx-font-weight: normal; /* Peut-être moins en emphase que le bouton primaire */
+    -fx-font-size: 14px;
+    -fx-padding: 10px 25px;
+    -fx-background-radius: 20px;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 5, 0.0, 0, 1);
+}
+.root > HBox > Button:last-child:hover {
+    -fx-background-color: #D32F2F; /* Rouge plus foncé au survol */
+}

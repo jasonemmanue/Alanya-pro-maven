@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.MenuButton?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+
+<BorderPane prefHeight="750" prefWidth="1000" styleClass="main-container" stylesheets="@alanya.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.Alanya.Mainfirstclientcontroller">
+   <left>
+      <VBox fx:id="sidebarVBox" prefWidth="225" styleClass="sidebar">
+         <children>
+         
+            <HBox alignment="CENTER"> <children>
+                  <MenuButton cache="false" styleClass="sidebar-menu-button" text="MENU ☰">
+                     <items>
+                        <MenuItem onAction="#handleEditProfilePic" text="Modifier photo profil" />
+                        <MenuItem onAction="#handleEditBackground" text="Modifier arrière-plan discussion" />
+                        <MenuItem onAction="#handleTheme" text="Thème Sombre" />
+                        <MenuItem onAction="#handleSupport" text="Service client" />
+                     </items>
+                  </MenuButton>
+               </children>
+               <VBox.margin>
+                  <Insets bottom="10.0" />
+               </VBox.margin>
+            </HBox>
+            
+            <Label styleClass="profile-section-header" />
+            <HBox fx:id="currentUserDisplayBox" alignment="CENTER_LEFT" spacing="10">
+               <children>
+                  <Circle fx:id="currentUserAvatar" radius="25.0" stroke="BLACK" strokeType="INSIDE" strokeWidth="0.0" />
+                  <Label fx:id="currentUsernameLabel" maxWidth="Infinity" style="-fx-font-weight: bold; -fx-text-fill: white; -fx-font-size: 1.2em;" text="Username" />
+               </children>
+               <VBox.margin>
+                  <Insets bottom="15.0" left="5.0" />
+               </VBox.margin>
+            </HBox>
+            
+            <Label styleClass="section-title" text="Discussions" />
+            <TextField promptText="Rechercher contact..." styleClass="search-field" />
+            <ListView fx:id="contactListView" styleClass="contact-list" VBox.vgrow="ALWAYS" />
+            <Button maxWidth="Infinity" onAction="#handleNewContact" styleClass="btn-primary" text="Nouveau Contact">
+               <padding>
+                  <Insets bottom="10.0" left="15.0" right="15.0" top="10.0" />
+               </padding>
+               <VBox.margin>
+                  <Insets top="10.0" />
+               </VBox.margin>
+            </Button>
+            <Button maxWidth="Infinity" onAction="#handleLogoutButton" styleClass="btn-danger" text="Déconnexion">
+               <padding>
+                  <Insets bottom="10.0" left="15.0" right="15.0" top="10.0" />
+               </padding>
+            </Button>
+            
+         </children>
+         <padding>
+            <Insets bottom="10.0" left="12.0" right="12.0" top="10.0" />
+         </padding>
+      </VBox>
+   </left>
+   <center>
+      <BorderPane fx:id="centerChatPane" styleClass="chat-container">
+         <top>
+            <HBox fx:id="contactNAMEHBOX" alignment="CENTER_LEFT" prefHeight="60.0" spacing="12.0" styleClass="chat-header" visible="false">
+               <children>
+                  <Button onAction="#handleBack" styleClass="btn-icon, btn-back" text="⬅" />
+                  <Label fx:id="contactChatHeaderLabel" maxWidth="Infinity" styleClass="header-title" text="Sélectionnez un contact" HBox.hgrow="ALWAYS" />
+                  <Button fx:id="audioCallButton" onAction="#handleAudioCall" styleClass="btn-icon, btn-audio-call" />
+                  <Button fx:id="videoCallButton" onAction="#handleVideoCall" styleClass="btn-icon, btn-video-call" />
+                  <Button onAction="#handleMenu" styleClass="btn-icon, btn-menu" text="⋮" />
+               </children>
+               <padding>
+                  <Insets left="15.0" right="15.0" />
+               </padding>
+            </HBox>
+         </top>
+         <center>
+            <ScrollPane fx:id="messagesScrollPane" fitToWidth="true" styleClass="messages-scroll-pane">
+               <content>
+                  <VBox fx:id="messagesContainerVBox" spacing="10.0" styleClass="messages-container">
+                     <padding>
+                        <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+                     </padding>
+                  </VBox>
+               </content>
+            </ScrollPane>
+         </center>
+         <bottom>
+            <VBox fx:id="messageInputContainer" spacing="5.0" styleClass="message-input-container" visible="false">
+               <children>
+                  <VBox fx:id="voiceRecordingPane" alignment="CENTER_LEFT" managed="false" spacing="5.0" styleClass="voice-recording-pane" visible="false">
+                     <children>
+                        <Label fx:id="recordingTimerLabel" text="00:00" />
+                        <HBox fx:id="voiceVisualizer" alignment="CENTER_LEFT" minHeight="25.0" prefHeight="25.0" spacing="2.0" />
+                     </children>
+                     <padding>
+                        <Insets bottom="5.0" left="15.0" right="15.0" top="5.0" />
+                     </padding>
+                  </VBox>
+                  <GridPane fx:id="emojiGridPane" hgap="5.0" managed="false" styleClass="emoji-grid-pane" vgap="5.0" visible="false" />
+                  <HBox fx:id="messageInputBox" alignment="CENTER" prefHeight="60.0" spacing="8.0" styleClass="message-input-box">
+                     <children>
+                        <VBox alignment="BOTTOM_LEFT" spacing="0.0">
+                           <children>
+                              <VBox fx:id="attachmentOptionsPopup" managed="false" spacing="8.0" styleClass="attachment-options-popup" visible="false">
+                                 <children>
+                                    <Button fx:id="openFileButton" maxWidth="Infinity" onAction="#handleOpenFileButton" text="📎  Fichier" />
+                                    <Button fx:id="openCameraButton" maxWidth="Infinity" onAction="#handleOpenCamera" text="📷  Caméra" />
+                                 </children>
+                                 <VBox.margin>
+                                    <Insets bottom="5.0" />
+                                 </VBox.margin>
+                              </VBox>
+                              <Button fx:id="moreOptionsButton" onAction="#handleMoreOptionsButton" styleClass="btn-icon, btn-more-options" text="➕" />
+                           </children>
+                        </VBox>
+                        <TextField fx:id="messageField" promptText="Écrire un message..." styleClass="message-field" HBox.hgrow="ALWAYS" />
+                        <Button fx:id="emojiPickerButton" onAction="#handleEmoji" styleClass="icons-button" />
+                        <Button fx:id="sendMessageButton" onAction="#handleSendMessageButton" styleClass="btn-send" text="➤" />
+                     </children>
+                     <padding>
+                        <Insets bottom="8.0" left="12.0" right="12.0" top="8.0" />
+                     </padding>
+                  </HBox>
+                  <Label fx:id="statusLabel" maxWidth="Infinity" styleClass="status-label" text="Statut: Prêt" />
+               </children>
+            </VBox>
+         </bottom>
+      </BorderPane>
+   </center>
+</BorderPane>

@@ -1,0 +1,189 @@
+/* Authentification.css */
+/* Thème principal inspiré de WelcomePageController.fxml et SignUpCOntroller.fxml (Bleu et Blanc) */
+
+/* Style de base pour les boutons */
+.button {
+    -fx-scale-x: 1.0;
+    -fx-scale-y: 1.0;
+    -fx-transition: scale 0.2s ease-in-out;
+    -fx-font-family: "System"; /* Police inspirée de WelcomePageController/SignUpCOntroller */
+    -fx-font-size: 14px;
+    -fx-background-color: #E0E0E0; /* Un gris clair par défaut, sera surchargé par les ID pour des styles spécifiques */
+    -fx-background-radius: 3;
+    -fx-pref-width: 160px; /* Largeur par défaut */
+    -fx-pref-height: 30px; /* Hauteur par défaut */
+    -fx-text-fill: #333333; /* Couleur de texte par défaut pour les boutons standards */
+    -fx-padding : 8px;
+}
+
+.button:hover {
+    -fx-scale-x: 1.05; /* Effet de survol subtil par défaut */
+    -fx-scale-y: 1.05;
+    -fx-background-color: #D0D0D0; /* Un peu plus foncé au survol par défaut */
+}
+
+/* Style de base pour les labels */
+.label {
+    -fx-font-family: "System"; /* Police inspirée de WelcomePageController/SignUpCOntroller */
+    -fx-font-size: 12px;       /* Taille de base, peut être surchargée */
+    -fx-padding : 4px;
+    -fx-text-fill: #FFFFFF; /* Couleur de texte par défaut pour les labels sur fond bleu */
+}
+
+/* Styles pour les champs de texte et mot de passe */
+TextField, PasswordField {
+    -fx-font-family: "System";
+    -fx-font-size: 12px;
+    -fx-background-color: #FFFFFF; /* Fond blanc comme dans WelcomePage/SignUpCOntroller */
+    -fx-text-fill: #000000; /* Texte noir */
+    -fx-border-color: #B0B0B0; /* Bordure grise discrète */
+    -fx-border-width: 1px;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+    -fx-pref-height: 30px;
+    -fx-prompt-text-fill: #A0A0A0; /* Couleur du placeholder */
+}
+
+/* --- Styles pour les pages d'authentification (fx:id="principalbox" ou fx:id="inscriptionpage") --- */
+
+#principalbox, #inscriptionpage { /* Appliquer le thème bleu aux deux conteneurs principaux d'authentification */
+    -fx-background-color: #2196F3; /* Couleur bleue dominante */
+    -fx-background-repeat: no-repeat;
+    -fx-background-size: cover;    /* Ajuste la taille de l'image pour couvrir la zone */
+    -fx-background-position: center;
+   
+}
+#principalbox { -fx-background-image: url("imglogin.png"); -fx-background-size: 70%; } 
+#inscriptionpage { -fx-background-image: url("imgsign.png");-fx-background-size: 70%; }
+
+   
+
+/* Style pour le titre principal (Ex: "SE CONNECTER OU CRÉER UN COMPTE ALANYA" ou "Créer un compte") */
+/* S'applique au premier Label dans le premier VBox enfant de #principalbox ou #inscriptionpage */
+#principalbox > VBox:first-child > Label,
+#inscriptionpage > VBox:first-child > Label {
+    -fx-font-family: "System";
+    -fx-font-weight: bold;
+    -fx-font-size: 16px;       /* Inspiré de #login_panel ou titre de SignUp */
+    -fx-text-fill: #FFFFFF;    /* Texte blanc sur fond bleu */
+    -fx-padding: 10px 0px;
+}
+/* Si vous avez un ID spécifique comme #mainAuthTitleLabel pour le titre de la page de connexion/choix */
+#mainAuthTitleLabel {
+    -fx-font-family: "System";
+    -fx-font-weight: bold;
+    -fx-font-size: 16px;
+    -fx-text-fill: #FFFFFF;
+    -fx-padding: 10px 0px;
+}
+
+
+/* Styles pour les labels des champs de formulaire sur les pages d'authentification */
+/* (Ex: "Nom d'utilisateur:", "Mot de passe:") */
+#principalbox VBox Label,
+#inscriptionpage VBox Label { /* Cible les labels dans les VBox des pages d'auth */
+    /* Cette règle est générale. Le titre ci-dessus est plus spécifique. */
+    -fxtext-fill: #FFFFFF;    /* Texte blanc sur fond bleu */
+    -fx-font-family: "System";
+    -fx-font-size: 12px;      /* Taille standard pour les labels de champs */
+}
+/* Style pour .slabel si utilisé pour les labels de champs */
+.slabel {
+    -fx-font-family: "System";
+    -fx-font-weight: bold;    /* Souvent utilisé pour les labels de formulaire dans SignUp */
+    -fx-font-size: 14px;      /* Un peu plus grand pour les labels de champs */
+    -fx-text-fill: #FFFFFF;   /* Texte blanc sur fond bleu */
+    -fx-padding : 4px 0px 4px 4px;
+    -fx-pref-width: auto;     /* Laisser la largeur s'adapter */
+}
+
+
+/* --- Styles spécifiques des boutons pour les pages d'authentification --- */
+
+/* Bouton "SE CONNECTER" (fx:id="connectbutton") sur la page de connexion/choix */
+#connectbutton {
+    -fx-background-color: #FFFFFF; /* Fond blanc */
+    -fx-text-fill: #2196F3;    /* Texte bleu (couleur du fond principal) */
+    -fx-font-family: "System";
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-pref-width: 150px;
+    -fx-pref-height: 35px;
+    -fx-background-radius: 3px;
+    -fx-border-color: #2196F3;   /* Optionnel: bordure bleue */
+    -fx-border-width: 1px;
+    -fx-border-radius: 3px;
+    -fx-padding : 8px;
+}
+#connectbutton:hover {
+    -fx-background-color: #E8E8E8; /* Léger gris au survol */
+    -fx-scale-x: 1.0;
+    -fx-scale-y: 1.0;
+}
+
+/* Bouton "S'INSCRIRE" (fx:id="inscriptmenu") sur la page de connexion/choix */
+#inscriptmenu {
+    -fx-background-color: transparent; /* Fond transparent */
+    -fx-text-fill: #FFFFFF;        /* Texte blanc */
+    -fx-font-family: "System";
+    -fx-font-size: 13px;
+    -fx-underline: true;           /* Souligné comme un lien */
+    -fx-pref-width: 150px;
+    -fx-pref-height: 35px;
+    -fx-padding : 8px;
+}
+#inscriptmenu:hover {
+    -fx-text-fill: #D0E8FF;        /* Couleur de survol pour le texte */
+    -fx-scale-x: 1.0;
+    -fx-scale-y: 1.0;
+}
+
+/* Bouton "S'INSCRIRE" (fx:id="inscriptionbutton") sur la page d'inscription (SignUp) */
+/* Et bouton "J'AI DÉJÀ UN COMPTE" (fx:id="returnbutton") sur la page d'inscription */
+/* Ces ID étaient dans vos FXML précédents. */
+#inscriptionbutton { /* Bouton principal sur la page d'inscription */
+    -fx-background-color: #FFFFFF;
+    -fx-text-fill: #243beb;     /* Bleu de SignUpCOntroller */
+    -fx-font-family: "System";
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-pref-width: 180px;     /* Ajusté */
+    -fx-pref-height: 35px;    /* Ajusté */
+}
+#inscriptionbutton:hover {
+    -fx-background-color: #E8E8E8;
+}
+
+#returnbutton { /* Bouton secondaire sur la page d'inscription, ou autre usage */
+    -fx-background-color: transparent;
+    -fx-text-fill: #FFFFFF;        /* Blanc sur fond bleu */
+    -fx-underline: true;
+    -fx-font-family: "System";
+    -fx-font-weight: bold;
+    -fx-font-size:13px;        /* Taille ajustée */
+    -fx-pref-width: 190px;
+    -fx-pref-height: 35px;
+    -fx-padding : 8px;
+}
+#returnbutton:hover{
+     -fx-text-fill: #D0E8FF;
+     -fx-scale-x: 1.0; /* Pas de scale au survol pour un look plus plat */
+     -fx-scale-y: 1.0;
+}
+
+/* --- Autres styles (à vérifier pour pertinence avec le nouveau thème) --- */
+#ntext, #mtext{
+    -fx-background-color: #A0D2FA; /* Un bleu plus clair pour contraster sur #2196F3 */
+    -fx-text-fill: #000000; /* Texte noir pour lisibilité */
+    -fx-background-radius: 10;
+    -fx-pref-width: 50px;
+    -fx-pref-height: 25px;
+    -fx-font-family: "System";
+}
+
+#createlabel, #connectionlabel { /* Utilisés potentiellement pour des titres de section */
+    -fx-font-family: "System";
+    -fx-font-weight: bold;
+    -fx-font-size:16px;
+    -fx-text-fill: #FFFFFF; /* Texte blanc sur fond bleu */
+}

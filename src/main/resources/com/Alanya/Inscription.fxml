@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.URL?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.geometry.Insets?>
+
+<VBox fx:id="inscriptionpage" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="700.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.Alanya.MainAthentificationcontroller" spacing="15.0">
+    <padding>
+        <Insets top="15" right="20" bottom="15" left="20" />
+    </padding>
+   <children>
+      <VBox alignment="CENTER" prefHeight="40.0">
+         <children>
+            <Label text="Créer un compte" textFill="#cc5500" />
+         </children>
+      </VBox>
+
+      <HBox alignment="CENTER">
+         <children>
+            <VBox spacing="5.0" prefWidth="450.0" alignment="CENTER_LEFT">
+               <children>
+                  <Label prefHeight="17.0" styleClass="slabel" text="Nom d'utilisateur:" textFill="#f88e55" />
+                  <TextField fx:id="usernameRegField" prefHeight="27.0" prefWidth="450.0" promptText="Username" />
+               </children>
+            </VBox>
+         </children>
+      </HBox>
+
+      <HBox alignment="CENTER">
+         <children>
+            <VBox spacing="5.0" prefWidth="450.0" alignment="CENTER_LEFT">
+               <children>
+                  <Label prefHeight="17.0" styleClass="slabel" text="Email:" textFill="#f88e55" />
+                  <TextField fx:id="emailField" prefHeight="27.0" prefWidth="450.0" promptText="Entrez votre email" />
+               </children>
+            </VBox>
+         </children>
+      </HBox>
+
+      <HBox alignment="CENTER">
+         <children>
+            <VBox spacing="5.0" prefWidth="450.0" alignment="CENTER_LEFT">
+               <children>
+                  <Label styleClass="slabel" text="Tel:" textFill="#f88e55" />
+                  <TextField fx:id="phoneField" prefHeight="25.0" prefWidth="450.0" promptText="+237 ***-***-***-***" />
+               </children>
+            </VBox>
+         </children>
+      </HBox>
+
+      <HBox alignment="CENTER">
+         <children>
+            <VBox spacing="5.0" prefWidth="450.0" alignment="CENTER_LEFT">
+               <children>
+                  <Label styleClass="slabel" text="Mot de passe :" textFill="#f88e55" />
+                  <PasswordField fx:id="passwordRegField" prefHeight="25.0" prefWidth="450.0" promptText="Entrez au moins 6 caractères" />
+               </children>
+            </VBox>
+         </children>
+      </HBox>
+
+      <HBox alignment="CENTER">
+         <children>
+            <VBox spacing="5.0" prefWidth="450.0" alignment="CENTER_LEFT">
+               <children>
+                  <Label styleClass="slabel" text="Confirmer mot de passe:" textFill="#f88e55" />
+                  <PasswordField fx:id="confirmPasswordField" prefHeight="25.0" prefWidth="450.0" promptText="Confirm your password" />
+               </children>
+            </VBox>
+         </children>
+      </HBox>
+
+      <VBox alignment="CENTER" spacing="15.0">
+         <children>
+            <HBox alignment="CENTER" spacing="20.0">
+               <children>
+                  <Button fx:id="inscriptionbutton" mnemonicParsing="false" onAction="#inscription" text="S'INSCRIRE" />
+                  <Button fx:id="returnbutton" mnemonicParsing="false" onAction="#switchtofirstmenu" text="J'AI DÉJÀ UN COMPTE" />
+               </children>
+            </HBox>
+         </children>
+         <VBox.margin>
+            <Insets top="15.0" />
+         </VBox.margin>
+      </VBox>
+   </children>
+   <stylesheets>
+      <URL value="@Authentification.css" />
+   </stylesheets>
+</VBox>

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.URL?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<VBox fx:id="principalbox" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="530.0" prefWidth="700.0" spacing="10.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.Alanya.MainAthentificationcontroller"> <padding>
+      <Insets bottom="10" left="20" right="20" top="10" />
+   </padding>
+   <children>
+      <VBox alignment="CENTER" prefHeight="105.0" prefWidth="599.0">
+         <children>
+            <Label prefHeight="36.0" prefWidth="381.0" text="SE CONNECTER OU CRÉER UN COMPTE ALANYA " textFill="#cc5500">
+               <font>
+                  <Font size="13.0" />
+               </font>
+            </Label>
+         </children>
+      </VBox>
+      <VBox prefHeight="97.0" prefWidth="599.0">
+         <children>
+            <VBox prefHeight="22.0" prefWidth="599.0">
+               <children>
+                  <HBox prefHeight="100.0" prefWidth="200.0">
+                     <children>
+                        <VBox prefHeight="36.0" prefWidth="118.0" />
+                        <VBox prefHeight="16.0" prefWidth="522.0">
+                           <children>
+                              <Label text="Nom d'utilisateur/Email/Téléphone:" textFill="#f88e55" />
+                           </children>
+                        </VBox>
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
+            <VBox alignment="CENTER" prefHeight="85.0" prefWidth="599.0">
+               <children>
+                  <HBox prefHeight="100.0" prefWidth="200.0">
+                     <children>
+                        <VBox prefHeight="72.0" prefWidth="136.0" />
+                        <VBox prefHeight="61.0" prefWidth="464.0">
+                           <children>
+                              <TextField fx:id="loginIdentifierField" prefHeight="25.0" prefWidth="462.0" promptText="Username/email/tel" />
+                           </children>
+                        </VBox>
+                        <VBox prefHeight="200.0" prefWidth="100.0" />
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
+         </children>
+      </VBox>
+      <VBox prefHeight="90.0" prefWidth="599.0">
+         <children>
+            <VBox prefHeight="25.0" prefWidth="599.0">
+               <children>
+                  <HBox prefHeight="100.0" prefWidth="200.0">
+                     <children>
+                        <VBox prefHeight="36.0" prefWidth="118.0" />
+                        <VBox prefHeight="24.0" prefWidth="525.0">
+                           <children>
+                              <Label text="Mot de passe:" textFill="#f88e55" />
+                           </children>
+                        </VBox>
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
+            <VBox alignment="CENTER" prefHeight="67.0" prefWidth="374.0">
+               <children>
+                  <HBox prefHeight="88.0" prefWidth="599.0">
+                     <children>
+                        <VBox prefHeight="54.0" prefWidth="125.0" />
+                        <VBox prefHeight="66.0" prefWidth="460.0">
+                           <children>
+                              <PasswordField fx:id="passwordLoginField" promptText="Password" />
+                           </children>
+                        </VBox>
+                        <VBox prefHeight="66.0" prefWidth="73.0" />
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
+         </children>
+      </VBox>
+      <VBox prefHeight="110.0" prefWidth="599.0">
+         <children>
+            <HBox prefHeight="100.0" prefWidth="200.0">
+               <children>
+                  <VBox alignment="CENTER" prefHeight="100.0" prefWidth="355.0">
+                     <children>
+                        <Button fx:id="connectbutton" mnemonicParsing="false" onAction="#connection" text="SE CONNECTER" textFill="#e9c9b1" />
+                     </children>
+                  </VBox>
+                  <VBox alignment="CENTER" prefHeight="100.0" prefWidth="349.0">
+                     <children>
+                        <Button fx:id="inscriptmenu" mnemonicParsing="false" onAction="#switchtoinscriptmenu" text="S'INSCRIRE" />
+                     </children>
+                  </VBox>
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+
+      <HBox alignment="CENTER" prefHeight="30.0">
+         <children>
+            <Label text="2025 Alanya communication, All rights are reserved" textFill="#d0c5c5">
+               <font>
+                  <Font size="10.0" />
+               </font>
+            </Label>
+         </children>
+         <VBox.margin>
+            <Insets top="10.0" /> </VBox.margin>
+      </HBox>
+   </children>
+   <stylesheets>
+      <URL value="@Authentification.css" />
+   </stylesheets>
+</VBox>
