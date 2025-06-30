@@ -1,5 +1,13 @@
 package com.Alanya;
 
+import javafx.geometry.Rectangle2D;
+import javafx.scene.SnapshotParameters;
+import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.ImagePattern;
+import javafx.scene.shape.Circle;
+import javafx.stage.Modality;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -58,7 +66,7 @@ import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.videoio.VideoCapture;
-
+import javafx.scene.paint.ImagePattern;
 import com.Alanya.DAO.MessageDAO;
 import com.Alanya.DAO.UserContactDAO;
 import com.Alanya.DAO.UserDAO;
@@ -127,6 +135,9 @@ import javafx.util.Duration;
 
 public class Mainfirstclientcontroller implements Initializable {
 	
+	private List<ClientDisplayWrapper> preloadedContacts;
+	private Map<Integer, Integer> preloadedUnreadCounts;
+	
 	@FXML private GridPane emojiGridPane;
 
 	@FXML
@@ -135,6 +146,7 @@ public class Mainfirstclientcontroller implements Initializable {
 	private VBox messagesContainerVBox;
 	@FXML
 	private ScrollPane messagesScrollPane;
+	@FXML private Button editProfilePicButton; 
 	@FXML
 	private TextField messageField;
 	@FXML
@@ -321,6 +333,68 @@ public class Mainfirstclientcontroller implements Initializable {
 	private static final String ICON_ERROR_TEXT = "⚠️";
 	private static final String ICON_LOADING_TEXT = "⏳";
 	private static final String ICON_FILE_TEXT = "📄";
+	
+	
+	
+	
+	public static void loadInitialDataInBackground(Client user) {
+	    if (user == null || user.getId() <= 0) return;
+	    
+	    // Simule un chargement de données (contacts, messages non lus, etc.)
+	    // Note : cette méthode est statique et sera appelée depuis le thread de connexion.
+	    // Elle ne peut pas mettre à jour l'UI directement.
+	    Mainfirstclientcontroller tempController = new Mainfirstclientcontroller();
+	    tempController.currentUser = user; // Assigne temporairement l'utilisateur
+	    tempController.preloadedContacts = tempController.fetchUserContactsFromDB(user.getId());
+	    
+	    MessageDAO dao = new MessageDAO();
+	    try {
+	        tempController.preloadedUnreadCounts = dao.getUnreadMessageCountsPerSender(user.getId());
+	    } catch(SQLException e) {
+	        e.printStackTrace();
+	        tempController.preloadedUnreadCounts = new HashMap<>();
+	    }
+	}
+
+	
+	public void setupApplication(Client user, String password, List<ClientDisplayWrapper> contacts, Map<Integer, Integer> unreadCounts) {
+	    // 1. Définir l'utilisateur authentifié
+	    setAuthenticatedUser(user, password);
+	    
+	    // 2. Appliquer les données pré-chargées à l'interface
+	    if (contacts != null) {
+	        myPersonalContactsList.setAll(contacts);
+	    }
+	    if (unreadCounts != null && notificationService != null) {
+	        notificationService.setInitialUnreadCounts(unreadCounts);
+	    }
+	    
+	    // 3. Lancer les connexions réseau en arrière-plan
+	    connectToServer();
+	    
+	    // 4. Rafraîchir l'interface immédiatement avec les données disponibles
+	    Platform.runLater(() -> {
+	        contactListView.refresh();
+	        // Le rafraîchissement des statuts "en ligne" se fera
+	        // progressivement à mesure que le serveur répond.
+	        refreshContactStatuses();
+	    });
+	}
+	
+	public void applyPreloadedData() {
+	    Platform.runLater(() -> {
+	        if (preloadedContacts != null) {
+	            myPersonalContactsList.setAll(preloadedContacts);
+	            System.out.println(preloadedContacts.size() + " contacts pré-chargés appliqués à l'UI.");
+	        }
+	        if (preloadedUnreadCounts != null && notificationService != null) {
+	            notificationService.loadInitialUnreadCounts(currentUser.getId());
+	            System.out.println("Compteurs de messages non lus appliqués.");
+	        }
+	        contactListView.refresh();
+	        refreshContactStatuses();
+	    });
+	}
 
 	public static class ClientDisplayWrapper {
         private final Client client;
@@ -339,357 +413,192 @@ public class Mainfirstclientcontroller implements Initializable {
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		userDAO = new UserDAO();
-		notificationService = new NotificationService(new MessageDAO(), userDAO);
-		contactService = new ContactService(new UserContactDAO(), userDAO);
-		presenceService = new PresenceService(userDAO);
+	    // --- Initialisation des services ---
+	    userDAO = new UserDAO();
+	    notificationService = new NotificationService(new MessageDAO(), userDAO);
+	    contactService = new ContactService(new UserContactDAO(), userDAO);
+	    presenceService = new PresenceService(userDAO);
+	    attachmentService = new AttachmentService();
+	    attachmentService.setMainController(this);
+	    contactService.setMainController(this);
 
-		attachmentService = new AttachmentService();
-		attachmentService.setMainController(this);
+	    contactListView.setItems(myPersonalContactsList);
+	    setupContactListViewCellFactory();
+	    contactListView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+	        if (newValue != null) {
+	            openDiscussionForContact(newValue.getClient(), newValue.getDisplayName());
+	        } else {
+	            handleBack(null);
+	        }
+	    });
+	    messageField.setOnKeyPressed(this::handleEnterKeyPressed);
 
-		contactListView.setItems(myPersonalContactsList);
-		messageField.setOnKeyPressed(this::handleEnterKeyPressed);
+	    if (notificationService != null) {
+	        notificationService.setContactListRefreshCallback(senderIdToRefresh -> {
+	            Platform.runLater(() -> contactListView.refresh());
+	        });
+	    }
+	    
+	    notificationService.setMessageDisplayCallback(this::displayMessage);
+	    
+	    try {
+	        // Chargement de l'icône pour l'appel audio
+	        Image audioIcon = new Image(getClass().getResourceAsStream("/com/Alanya/appel.png"));
+	        ImageView audioIconView = new ImageView(audioIcon);
+	        audioIconView.setFitHeight(24); 
+	        audioIconView.setFitWidth(24);
+	        audioCallButton.setGraphic(audioIconView); 
+	        
+	        Image videoIcon = new Image(getClass().getResourceAsStream("/com/Alanya/videocall.png"));
+	        ImageView videoIconView = new ImageView(videoIcon);
+	        videoIconView.setFitHeight(24); 
+	        videoIconView.setFitWidth(24);
+	        videoCallButton.setGraphic(videoIconView); 
+	    } catch (Exception e) {
+	        System.err.println("Erreur lors du chargement des icônes d'appel : " + e.getMessage());
+	        // En cas d'erreur (si les fichiers n'existent pas), on met un texte de secours
+	        audioCallButton.setText("📞");
+	        videoCallButton.setText("📹");
+	    }
 
-		contactService.setMainController(this);
-		
-        // Configuration de la liste de contacts
-        contactListView.setItems(myPersonalContactsList);
-        setupContactListViewCellFactory();
-        
-        
-        try {
-            Image audioIcon = new Image(getClass().getResourceAsStream("/com/Alanya/appel.png"));
-            ImageView audioIconView = new ImageView(audioIcon);
-            audioIconView.setFitHeight(24); 
-            audioIconView.setFitWidth(24);
-            audioCallButton.setGraphic(audioIconView);
+	    if (messagesScrollPane != null && messagesContainerVBox != null) {
+	        messagesScrollPane.setContent(messagesContainerVBox);
+	        messagesScrollPane.setFitToWidth(true);
+	        messagesContainerVBox.heightProperty().addListener((obs, oldVal, newVal) -> {
+	            if (newVal.doubleValue() > oldVal.doubleValue()) {
+	                messagesScrollPane.setVvalue(1.0);
+	            }
+	        });
+	    }
 
-            Image videoIcon = new Image(getClass().getResourceAsStream("/com/Alanya/videocall.png"));
-            ImageView videoIconView = new ImageView(videoIcon);
-            videoIconView.setFitHeight(24); 
-            videoIconView.setFitWidth(24);
-            videoCallButton.setGraphic(videoIconView);
-        } catch (Exception e) {
-            System.err.println("Erreur lors du chargement des icônes d'appel : " + e.getMessage());
-            audioCallButton.setText("📞");
-            videoCallButton.setText("📹");
-        }
-
-		if (notificationService != null) {
-			notificationService.setContactListRefreshCallback(senderIdToRefresh -> {
-				Platform.runLater(() -> {
-					contactListView.refresh();
-				});
-			});
-		}
-
-		if (messagesScrollPane != null && messagesContainerVBox != null) {
-			messagesScrollPane.setContent(messagesContainerVBox);
-			messagesScrollPane.setFitToWidth(true);
-			messagesContainerVBox.heightProperty().addListener((obs, oldVal, newVal) -> {
-				if (newVal.doubleValue() > oldVal.doubleValue()) {
-					messagesScrollPane.setVvalue(1.0);
-				}
-			});
-		} else {
-			System.err.println("FXML Error: messagesScrollPane ou messagesContainerVBox est null.");
-		}
-		
-		if (emojiPickerButton != null) {
+	    if (emojiPickerButton != null) {
 	        try {
-	            // Charge l'image depuis le dossier des ressources
 	            Image emojiIcon = new Image(getClass().getResourceAsStream("/com/Alanya/emoji.png"));
 	            ImageView emojiIconView = new ImageView(emojiIcon);
-
-	            // Définissez ici la taille que vous souhaitez pour l'icône
 	            emojiIconView.setFitHeight(22);
 	            emojiIconView.setFitWidth(22);
-
-	            // Assignez l'ImageView comme contenu graphique du bouton
 	            emojiPickerButton.setGraphic(emojiIconView);
-
-	            // Supprimez tout texte qui pourrait être sur le bouton
 	            emojiPickerButton.setText(null);
-
-	            // Indique au bouton de n'afficher que le graphique
 	            emojiPickerButton.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-
 	        } catch (Exception e) {
-	            System.err.println("Erreur lors du chargement de l'icône emoji.png : " + e.getMessage());
-	            // En cas d'échec, on met un texte de secours pour ne pas avoir un bouton vide
 	            emojiPickerButton.setText("😀");
 	        }
 	    }
 
-		initializeEmojiMapping();
+	    initializeEmojiMapping();
 	    loadAvailableEmojis();
 	    setupEmojiGrid();
 
-		attachmentPreviewPane = new HBox(5);
-		attachmentPreviewPane.setAlignment(Pos.CENTER_LEFT);
-		attachmentPreviewPane.setPadding(new Insets(5, 0, 5, 0));
-		attachmentPreviewPane.setVisible(false);
-		attachmentPreviewPane.setManaged(false);
-		attachmentFileNameLabel = new Label();
-		cancelAttachmentButton = new Button("X");
-		cancelAttachmentButton.setOnAction(this::handleCancelAttachment);
-		HBox.setHgrow(attachmentFileNameLabel, javafx.scene.layout.Priority.ALWAYS);
-		attachmentPreviewPane.getChildren().addAll(new Label("Fichier: "), attachmentFileNameLabel,
-				cancelAttachmentButton);
+	    // Configuration de l'aperçu des pièces jointes
+	    attachmentPreviewPane = new HBox(5);
+	    attachmentPreviewPane.setAlignment(Pos.CENTER_LEFT);
+	    attachmentPreviewPane.setPadding(new Insets(5, 0, 5, 0));
+	    attachmentPreviewPane.setVisible(false);
+	    attachmentPreviewPane.setManaged(false);
+	    attachmentFileNameLabel = new Label();
+	    cancelAttachmentButton = new Button("X");
+	    cancelAttachmentButton.setOnAction(this::handleCancelAttachment);
+	    HBox.setHgrow(attachmentFileNameLabel, Priority.ALWAYS);
+	    attachmentPreviewPane.getChildren().addAll(new Label("Fichier: "), attachmentFileNameLabel, cancelAttachmentButton);
 
-		if (messageInputContainer != null) {
-			if (messageInputContainer.getChildren().size() > 0) {
-				messageInputContainer.getChildren().add(0, attachmentPreviewPane);
-			} else {
-				messageInputContainer.getChildren().add(attachmentPreviewPane);
-			}
-		} else {
-			System.err.println("FXML Error: messageInputContainer is null.");
-		}
+	    if (messageInputContainer != null) {
+	        messageInputContainer.getChildren().add(0, attachmentPreviewPane);
+	    }
 
-		defaultConversationImage = new ImageView();
-		try {
-			defaultChatBackground = new Image(getClass().getResourceAsStream(DEFAULT_CHAT_BACKGROUND_PATH));
-			defaultConversationImage.setImage(defaultChatBackground);
-			defaultConversationImage.setPreserveRatio(true);
-			defaultConversationImage.setFitHeight(500);
-			defaultConversationImage.setVisible(true);
-			defaultConversationImage.setManaged(true);
-		} catch (Exception e) {
-			System.err.println("Impossible de charger l'image de fond par défaut: " + e.getMessage());
-		}
+	    // Configuration de l'image d'accueil par défaut
+	    defaultConversationImage = new ImageView();
+	    try {
+	        defaultChatBackground = new Image(getClass().getResourceAsStream(DEFAULT_CHAT_BACKGROUND_PATH));
+	        defaultConversationImage.setImage(defaultChatBackground);
+	        defaultConversationImage.setPreserveRatio(true);
+	        defaultConversationImage.setFitHeight(500);
+	        StackPane.setAlignment(defaultConversationImage, Pos.CENTER);
+	        Node messagesNode = messagesScrollPane;
+	        StackPane centerStack = new StackPane(defaultConversationImage, messagesNode);
+	        centerChatPane.setCenter(centerStack);
+	    } catch (Exception e) {
+	        System.err.println("Impossible de charger l'image de fond par défaut: " + e.getMessage());
+	    }
+	    
+	    // Visibilité initiale des éléments
+	    handleBack(null);
 
-		if (centerChatPane != null && defaultConversationImage != null && defaultConversationImage.getImage() != null) {
-			Node messagesNode = messagesScrollPane;
-			StackPane centerStack = new StackPane();
-			if (messagesNode != null) {
-				if (messagesNode.getParent() instanceof StackPane) {
-					((StackPane) messagesNode.getParent()).getChildren().remove(messagesNode);
-				}
-				centerStack.getChildren().addAll(defaultConversationImage, messagesNode);
-				messagesScrollPane.setVisible(false);
-				messagesScrollPane.setManaged(false);
-			} else {
-				centerStack.getChildren().add(defaultConversationImage);
-			}
-			centerChatPane.setCenter(centerStack);
-		} else {
-			if (messagesScrollPane != null) {
-				messagesScrollPane.setVisible(false);
-				messagesScrollPane.setManaged(false);
-			}
-			System.err.println("FXML Error: centerChatPane ou defaultConversationImage non initialisé correctement.");
-		}
+	    // Charger les icônes et l'avatar par défaut
+	    onlineIcon = loadImage(ONLINE_ICON_PATH);
+	    offlineIcon = loadImage(OFFLINE_ICON_PATH);
+	    defaultAvatar = loadImage(DEFAULT_AVATAR_PATH);
 
-		if (messageInputContainer != null) {
-			messageInputContainer.setVisible(false);
-			messageInputContainer.setManaged(false);
-		}
-		if (contactNAMEHBOX != null) {
-			contactNAMEHBOX.setVisible(false);
-			contactNAMEHBOX.setManaged(false);
-		}
-
-		onlineIcon = loadImage(ONLINE_ICON_PATH);
-		offlineIcon = loadImage(OFFLINE_ICON_PATH);
-		defaultAvatar = loadImage(DEFAULT_AVATAR_PATH);
-
-		contactListView.setCellFactory(param -> {
-			ListCell<ClientDisplayWrapper> cell = new ListCell<ClientDisplayWrapper>() {
-				private final HBox hbox = new HBox(10);
-				private final ImageView statusIndicatorImageView = new ImageView();
-				private final ImageView userAvatarImageView = new ImageView();
-				private final VBox nameAndPresenceVBox = new VBox(2);
-				private final Label nameLabel = new Label();
-				private final Label presenceDetailsLabel = new Label();
-				private final Label unreadCountLabel = new Label();
-				
-
-				{
-					statusIndicatorImageView.setFitHeight(10);
-					statusIndicatorImageView.setFitWidth(10);
-					userAvatarImageView.setFitHeight(30);
-					userAvatarImageView.setFitWidth(30);
-
-					presenceDetailsLabel.setStyle("-fx-font-size: 0.8em; -fx-text-fill: #555555;");
-					presenceDetailsLabel.setVisible(false);
-
-					unreadCountLabel.setStyle("-fx-background-color: #0078D7;" + "-fx-text-fill: white;"
-							+ "-fx-padding: 2px 6px;" + "-fx-background-radius: 10;" + "-fx-font-size: 0.85em;"
-							+ "-fx-font-weight: bold;");
-					unreadCountLabel.setVisible(false);
-
-					nameAndPresenceVBox.getChildren().addAll(nameLabel, presenceDetailsLabel);
-					nameAndPresenceVBox.setAlignment(Pos.CENTER_LEFT);
-
-					hbox.setAlignment(Pos.CENTER_LEFT);
-					hbox.getChildren().addAll(statusIndicatorImageView, userAvatarImageView, nameAndPresenceVBox,
-							unreadCountLabel);
-					HBox.setHgrow(nameAndPresenceVBox, javafx.scene.layout.Priority.ALWAYS);
-					HBox.setMargin(unreadCountLabel, new Insets(0, 0, 0, 5));
-
-					ContextMenu contextMenu = new ContextMenu();
-					MenuItem editNameItem = new MenuItem("Modifier Nom Personnalisé");
-					editNameItem.setOnAction(event -> {
-						ClientDisplayWrapper selectedWrapper = getItem();
-						if (selectedWrapper != null && currentUser != null && contactService != null) {
-							contactService.editContactNameDialog(currentUser.getId(), selectedWrapper);
-						}
-					});
-					MenuItem deleteItem = new MenuItem("Supprimer Contact");
-					deleteItem.setOnAction(event -> {
-						ClientDisplayWrapper selectedWrapper = getItem();
-						if (selectedWrapper != null && currentUser != null && contactService != null) {
-							contactService.deleteContact(currentUser.getId(), selectedWrapper);
-						}
-					});
-					contextMenu.getItems().addAll(editNameItem, new SeparatorMenuItem(), deleteItem);
-					setContextMenu(contextMenu);
-
-					this.setOnMouseClicked(event -> {
-						if (event.getButton() == MouseButton.SECONDARY && !isEmpty()) {
-							contextMenu.show(this, event.getScreenX(), event.getScreenY());
-						} else {
-							contextMenu.hide();
-						}
-					});
-				}
-
-				@Override
-				protected void updateItem(ClientDisplayWrapper wrapper, boolean empty) {
-					super.updateItem(wrapper, empty);
-					if (empty || wrapper == null || wrapper.getClient() == null) {
-						setText(null);
-						setGraphic(null);
-						unreadCountLabel.setVisible(false);
-						presenceDetailsLabel.setVisible(false);
-					} else {
-						nameLabel.setText(wrapper.getDisplayName());
-
-						Client contactClient = wrapper.getClient();
-						Image avatarImage = defaultAvatar;
-
-						userAvatarImageView.setImage(avatarImage);
-
-						boolean isOnline = contactOnlineStatusMap.getOrDefault(contactClient.getNomUtilisateur(),
-								false);
-						statusIndicatorImageView.setImage(isOnline ? onlineIcon : offlineIcon);
-
-						int unreadCount = 0;
-						if (notificationService != null) {
-							unreadCount = notificationService.getUnreadCount(contactClient.getId());
-						}
-						if (unreadCount > 0) {
-							unreadCountLabel.setText(String.valueOf(unreadCount));
-							unreadCountLabel.setVisible(true);
-						} else {
-							unreadCountLabel.setText("");
-							unreadCountLabel.setVisible(false);
-						}
-
-						if (!isOnline && presenceService != null) {
-							String presenceText = presenceService.getPresenceStatusForContact(contactClient.getId(),
-									false);
-							if (presenceText != null && (presenceText.toLowerCase().startsWith("vu")
-									|| presenceText.contains("inconnu") || presenceText.contains("indisponible"))) {
-								presenceDetailsLabel.setText(presenceText);
-								presenceDetailsLabel.setVisible(true);
-							} else {
-								presenceDetailsLabel.setText("");
-								presenceDetailsLabel.setVisible(false);
-							}
-						} else {
-							presenceDetailsLabel.setText("");
-							presenceDetailsLabel.setVisible(false);
-						}
-						setGraphic(hbox);
-					}
-				}
-			};
-			return cell;
-		});
-
-		contactListView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-			if (newValue != null) {
-				openDiscussionForContact(newValue.getClient(), newValue.getDisplayName());
-			} else {
-				handleBack(null);
-			}
-		});
-        if (attachmentOptionsPopup != null) {
-            attachmentOptionsPopup.setVisible(false);
-            attachmentOptionsPopup.setManaged(false);
-        } else {
-            System.err.println("FXML Error: attachmentOptionsPopup non injecté.");
-        }
-
-        if (messageField != null && sendMessageButton != null) {
-            messageField.textProperty().addListener((observable, oldValue, newValue) -> {
-                updateSendButtonState(newValue, attachmentService != null && attachmentService.getCurrentAttachmentInfo() != null);
-            });
-            updateSendButtonState(messageField.getText(), attachmentService != null && attachmentService.getCurrentAttachmentInfo() != null);
-        } else {
-            System.err.println("FXML Error: messageField ou sendMessageButton est null dans initialize. Le bouton micro/envoi ne fonctionnera pas.");
-        }
-		if (voiceRecordingPane != null) {
+	    // Configuration des boutons et popups
+	    if (attachmentOptionsPopup != null) {
+	        attachmentOptionsPopup.setVisible(false);
+	        attachmentOptionsPopup.setManaged(false);
+	    }
+	    if (messageField != null && sendMessageButton != null) {
+	        messageField.textProperty().addListener((observable, oldValue, newValue) -> {
+	            updateSendButtonState(newValue, attachmentService != null && attachmentService.getCurrentAttachmentInfo() != null);
+	        });
+	        updateSendButtonState(messageField.getText(), attachmentService != null && attachmentService.getCurrentAttachmentInfo() != null);
+	    }
+	    if (voiceRecordingPane != null) {
 			voiceRecordingPane.setVisible(false);
 			voiceRecordingPane.setManaged(false);
 			if (voiceVisualizer == null) {
-				voiceVisualizer = new HBox();
-				voiceVisualizer.setSpacing(2);
+				voiceVisualizer = new HBox(2);
 				voiceVisualizer.setAlignment(Pos.CENTER_LEFT); 
 				voiceVisualizer.setMinHeight(25); 
 			}
-		} else {
-			System.err.println(
-					"FXML Error: voiceRecordingPane non injecté. L'UI d'enregistrement vocal ne fonctionnera pas.");
 		}
-		updateStatus("Interface initialisée. En attente de connexion au serveur central.");
-		
-		populateEmojiGrid();
-		
-        // Création du menu contextuel
-        chatContextMenu = new ContextMenu();
-        
-        // Création de l'unique option de menu "Afficher contact"
-        MenuItem displayContactItem = new MenuItem("Afficher contact");
-        
-        // Définition de l'action lorsque l'on clique sur "Afficher contact"
-        displayContactItem.setOnAction(e -> {
-            // Récupérer le contact actuellement sélectionné dans la liste de gauche
-            ClientDisplayWrapper selectedWrapper = contactListView.getSelectionModel().getSelectedItem();
-            
-            if (selectedWrapper != null) {
-                // Si un contact est bien sélectionné, on récupère ses informations
-                Client contact = selectedWrapper.getClient();
-                String displayName = selectedWrapper.getDisplayName();
-                
-                // On prépare le texte à afficher
-                StringBuilder details = new StringBuilder();
-                details.append("Nom d'affichage : ").append(displayName).append("\n");
-                details.append("Nom d'utilisateur : ").append(contact.getNomUtilisateur()).append("\n");
-                details.append("Téléphone : ").append(contact.getTelephone() != null ? contact.getTelephone() : "Non renseigné").append("\n");
-                details.append("Email : ").append(contact.getEmail() != null ? contact.getEmail() : "Non renseigné");
+	    
+	    // Configuration du menu contextuel du chat
+	    chatContextMenu = new ContextMenu();
+	    MenuItem displayContactItem = new MenuItem("Afficher contact");
+	    displayContactItem.setOnAction(e -> {
+	        ClientDisplayWrapper selectedWrapper = contactListView.getSelectionModel().getSelectedItem();
+	        if (selectedWrapper != null) {
+	            Client contact = selectedWrapper.getClient();
+	            String displayName = selectedWrapper.getDisplayName();
+	            StringBuilder details = new StringBuilder();
+	            details.append("Nom d'affichage : ").append(displayName).append("\n");
+	            details.append("Nom d'utilisateur : ").append(contact.getNomUtilisateur()).append("\n");
+	            details.append("Téléphone : ").append(contact.getTelephone() != null ? contact.getTelephone() : "Non renseigné").append("\n");
+	            details.append("Email : ").append(contact.getEmail() != null ? contact.getEmail() : "Non renseigné");
+	            showAlert(AlertType.INFORMATION, "Détails du Contact", details.toString());
+	        } else {
+	            showAlert(AlertType.WARNING, "Aucun Contact", "Veuillez sélectionner une discussion pour voir les détails du contact.");
+	        }
+	    });
+	    chatContextMenu.getItems().add(displayContactItem);
 
-                // On affiche les détails dans une boîte de dialogue
-                showAlert(AlertType.INFORMATION, "Détails du Contact", details.toString());
-                
-            } else {
-                // Si aucune discussion n'est ouverte, on prévient l'utilisateur
-                showAlert(AlertType.WARNING, "Aucun Contact", "Veuillez sélectionner une discussion pour voir les détails du contact.");
-            }
-        });
+	    updateStatus("Interface initialisée. En attente de connexion au serveur central.");
+	}
+	
+	public void processIncomingP2PMessage(Message message) {
+	    if (message == null || currentUser == null) return;
 
-        // Ajout de l'unique option au menu
-        chatContextMenu.getItems().add(displayContactItem);
-		
-		
-    }
-	
-	
-	
-	
-	
+	    try {
+	        // On a besoin de l'ID de l'expéditeur pour la logique de notification
+	        int senderId = userDAO.getUserIdByUsername(message.getSender());
+	        if (senderId == -1) return; // Expéditeur inconnu
+
+	        // On récupère l'ID du contact actuellement affiché (peut être null)
+	        ClientDisplayWrapper selectedWrapper = contactListView.getSelectionModel().getSelectedItem();
+	        Integer contactCurrentlyBeingViewedId = (selectedWrapper != null) ? selectedWrapper.getClient().getId() : null;
+	        
+	        // On passe toutes les informations au service de notification
+	        notificationService.onMessageReceived(
+	            message,
+	            currentUser.getId(),
+	            contactCurrentlyBeingViewedId,
+	            senderId
+	        );
+
+	    } catch (SQLException e) {
+	        System.err.println("Erreur lors du traitement du message P2P entrant : " + e.getMessage());
+	        e.printStackTrace();
+	    }
+	}
+
+
 	private void setupContactListViewCellFactory() {
         contactListView.setCellFactory(param -> {
             ListCell<ClientDisplayWrapper> cell = new ListCell<>() {
@@ -700,11 +609,40 @@ public class Mainfirstclientcontroller implements Initializable {
                 private final Label presenceDetailsLabel = new Label();
                 private final Pane spacer = new Pane();
                 private final Label unreadCountLabel = new Label();
+                private final ContextMenu contactMenu = new ContextMenu();
+                
 
                 {
-                    // Configuration initiale des éléments graphiques
+                	 MenuItem renameItem = new MenuItem("Modifier le nom");
+                	 renameItem.setStyle("-fx-text-fill: black;"); 
+                     renameItem.setOnAction(event -> {
+                         ClientDisplayWrapper wrapper = getItem();
+                         if (wrapper != null && currentUser != null && contactService != null) {
+                             // Utilise la méthode du service pour ouvrir la boîte de dialogue
+                             contactService.editContactNameDialog(currentUser.getId(), wrapper);
+                         }
+                     });
+
+                     MenuItem deleteItem = new MenuItem("Supprimer le contact");
+                     deleteItem.setStyle("-fx-text-fill: black;");
+                     deleteItem.setOnAction(event -> {
+                         ClientDisplayWrapper wrapper = getItem();
+                         if (wrapper != null && currentUser != null && contactService != null) {
+                             // Utilise la méthode du service pour gérer la suppression
+                             contactService.deleteContact(currentUser.getId(), wrapper);
+                         }
+                     });
+
+                     // Ajout des options au menu
+                     contactMenu.getItems().addAll(renameItem, new SeparatorMenuItem(), deleteItem);
+                     
+                     // On attache le menu contextuel à la cellule
+                     setContextMenu(contactMenu);
                     presenceDetailsLabel.setStyle("-fx-font-size: 0.8em; -fx-text-fill: #A0A0A0;");
-                    unreadCountLabel.getStyleClass().add("unread-count-label"); // Utiliser une classe CSS
+                    unreadCountLabel.getStyleClass().add("unread-count-label");
+                    unreadCountLabel.setStyle("-fx-background-color: #0078D7;" + "-fx-text-fill: white;"
+							+ "-fx-padding: 2px 6px;" + "-fx-background-radius: 10;" + "-fx-font-size: 0.85em;"
+							+ "-fx-font-weight: bold;");
                     nameAndPresenceVBox.getChildren().addAll(nameLabel, presenceDetailsLabel);
                     HBox.setHgrow(spacer, Priority.ALWAYS);
                     hbox.setAlignment(Pos.CENTER_LEFT);
@@ -721,11 +659,25 @@ public class Mainfirstclientcontroller implements Initializable {
                         Client contactClient = wrapper.getClient();
                         nameLabel.setText(wrapper.getDisplayName());
 
-                        // Affichage de la photo de profil
-                        Image avatarImg = bytesToImage(contactClient.getProfilePicture());
-                        contactAvatar.setFill(new ImagePattern(avatarImg != null ? avatarImg : defaultAvatar));
+                        byte[] profilePicBytes = contactClient.getProfilePicture();
+                        Image avatarImg = null;
 
-                        // Affichage du statut (online/offline + dernière vue)
+                        System.out.println("[DEBUG UI] Affichage contact: " + contactClient.getNomUtilisateur() 
+                                         + " | Données photo disponibles: " + (profilePicBytes != null && profilePicBytes.length > 0));
+
+                        if (profilePicBytes != null && profilePicBytes.length > 0) {
+                            avatarImg = bytesToImage(profilePicBytes);
+                        }
+                        
+                        if (avatarImg != null) {
+                            // On utilise l'image du contact
+                            contactAvatar.setFill(new ImagePattern(avatarImg));
+                        } else {
+                            // On utilise l'avatar par défaut si aucune image n'est trouvée
+                            contactAvatar.setFill(new ImagePattern(defaultAvatar));
+                        }
+                        
+                        // Le reste de votre logique pour le statut...
                         boolean isOnline = contactOnlineStatusMap.getOrDefault(contactClient.getNomUtilisateur(), false);
                         if (isOnline) {
                             presenceDetailsLabel.setText("En ligne");
@@ -736,7 +688,6 @@ public class Mainfirstclientcontroller implements Initializable {
                             presenceDetailsLabel.setStyle("-fx-font-size: 0.8em; -fx-text-fill: #A0A0A0;");
                         }
 
-                        // Affichage du nombre de messages non lus
                         int unreadCount = notificationService.getUnreadCount(contactClient.getId());
                         if (unreadCount > 0) {
                             unreadCountLabel.setText(String.valueOf(unreadCount));
@@ -751,7 +702,6 @@ public class Mainfirstclientcontroller implements Initializable {
             return cell;
         });
     }
-
 	
 	private void populateEmojiGrid() {
         if (emojiGridPane == null) return;
@@ -790,11 +740,76 @@ public class Mainfirstclientcontroller implements Initializable {
     
     
     
-    @FXML
-    void handleEditProfilePic(ActionEvent event) {
-        showAlert(AlertType.INFORMATION, "Fonctionnalité en cours", "La modification de la photo de profil sera bientôt disponible.");
-    }
+	 @FXML
+	    void handleEditProfilePic(ActionEvent event) {
+	        if (currentUser == null) {
+	            showAlert(AlertType.ERROR, "Erreur", "Utilisateur non connecté.");
+	            return;
+	        }
+	        try {
+	            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/Alanya/ProfilePictureEditor.fxml"));
+	            Parent root = loader.load();
 
+	            ProfilePictureEditorController editorController = loader.getController();
+	            editorController.initData(this, currentUser);
+
+	            Stage stage = new Stage();
+	            stage.setTitle("Éditeur de Photo de Profil");
+	            stage.setScene(new Scene(root));
+	            stage.initModality(Modality.APPLICATION_MODAL);
+	            stage.initOwner(this.getStage()); // 'this.getStage()' est une méthode que vous avez déjà
+	            stage.setResizable(false);
+	            stage.showAndWait();
+
+	        } catch (IOException e) {
+	            e.printStackTrace();
+	            showAlert(AlertType.ERROR, "Erreur d'interface", "Impossible de charger la fenêtre d'édition.");
+	        }
+	    }
+	 
+	 public void updateProfilePictureUI(Image image) {
+	        Platform.runLater(() -> {
+	            if (currentUserAvatar != null) {
+	                Image imageToShow = image;
+	                if (imageToShow == null) {
+	                    try {
+	                        imageToShow = new Image(getClass().getResourceAsStream("/com/Alanya/compte-utilisateur.png"));
+	                    } catch (Exception e) {
+	                        currentUserAvatar.setFill(Color.GREY);
+	                        return;
+	                    }
+	                }
+	                // On applique le recadrage ici aussi pour la cohérence
+	                currentUserAvatar.setFill(new ImagePattern(cropToSquare(imageToShow)));
+	            }
+	        });
+	    }
+	    
+	 
+	 private Image cropToSquare(Image image) {
+	        if (image == null) return null;
+	        
+	        double width = image.getWidth();
+	        double height = image.getHeight();
+	        double size = Math.min(width, height);
+
+	        double xOffset = (width - size) / 2;
+	        double yOffset = (height - size) / 2;
+
+	        ImageView imageView = new ImageView(image);
+	        Rectangle2D viewport = new Rectangle2D(xOffset, yOffset, size, size);
+	        imageView.setViewport(viewport);
+
+	        SnapshotParameters params = new SnapshotParameters();
+	        params.setFill(Color.TRANSPARENT);
+	        
+	        WritableImage croppedImage = new WritableImage((int) size, (int) size);
+	        imageView.snapshot(params, croppedImage);
+	        
+	        return croppedImage;
+	    }
+	 
+	 
     @FXML
     void handleEditBackground(ActionEvent event) {
         showAlert(AlertType.INFORMATION, "Fonctionnalité en cours", "La modification de l'arrière-plan de la discussion sera bientôt disponible.");
@@ -1377,32 +1392,36 @@ public class Mainfirstclientcontroller implements Initializable {
 		});
 	}
 
-	private List<ClientDisplayWrapper> fetchUserContactsFromDB(int ownerUserId) {
-		List<ClientDisplayWrapper> contacts = new ArrayList<>();
-		UserContactDAO localUserContactDAO = new UserContactDAO();
-
-		String sql = "SELECT u.id, u.nom_utilisateur, u.email, u.telephone, u.statut, u.est_admin, u.last_known_ip, u.last_known_port, uc.nom_personnalise "
-				+ "FROM UserContacts uc " + "JOIN Utilisateurs u ON uc.contact_user_id = u.id "
-				+ "WHERE uc.owner_user_id = ?";
-		try (Connection conn = DatabaseConnection.getConnection();
-				PreparedStatement pstmt = conn.prepareStatement(sql)) {
-			pstmt.setInt(1, ownerUserId);
-			try (ResultSet rs = pstmt.executeQuery()) {
-				while (rs.next()) {
-					Client contactUser = new Client(rs.getInt("u.id"), rs.getString("u.nom_utilisateur"),
-							rs.getString("u.email"), rs.getString("u.telephone"), rs.getString("u.statut"),
-							rs.getBoolean("u.est_admin"), rs.getString("u.last_known_ip"),
-							rs.getInt("u.last_known_port"));
-					String nomPersonnalise = rs.getString("nom_personnalise");
-					contacts.add(new ClientDisplayWrapper(contactUser, nomPersonnalise));
-				}
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-			showAlert(AlertType.ERROR, "Erreur Base de Données",
-					"Impossible de charger vos contacts personnels : " + e.getMessage());
-		}
-		return contacts;
+	public static List<ClientDisplayWrapper> fetchUserContactsFromDB(int ownerUserId) {
+	    List<ClientDisplayWrapper> contacts = new ArrayList<>();
+	    String sql = "SELECT u.id, u.nom_utilisateur, u.email, u.telephone, u.statut, u.est_admin, u.last_known_ip, u.last_known_port, u.profile_picture, uc.nom_personnalise "
+	            + "FROM UserContacts uc JOIN Utilisateurs u ON uc.contact_user_id = u.id "
+	            + "WHERE uc.owner_user_id = ?";
+	    
+	    try (Connection conn = DatabaseConnection.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+	        pstmt.setInt(1, ownerUserId);
+	        try (ResultSet rs = pstmt.executeQuery()) {
+	            while (rs.next()) {
+	                Client contactUser = new Client(
+	                    rs.getInt("u.id"), rs.getString("u.nom_utilisateur"), rs.getString("u.email"),
+	                    rs.getString("u.telephone"), rs.getString("u.statut"), rs.getBoolean("u.est_admin"),
+	                    rs.getString("u.last_known_ip"), rs.getInt("u.last_known_port")
+	                );
+	                byte[] profilePicBytes = rs.getBytes("u.profile_picture");
+	                if (profilePicBytes != null) {
+	                    contactUser.setProfilePicture(profilePicBytes);
+	                }
+	                String nomPersonnalise = rs.getString("nom_personnalise");
+	                contacts.add(new ClientDisplayWrapper(contactUser, nomPersonnalise));
+	            }
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        // Dans un contexte statique, on ne peut pas montrer d'alerte. On log l'erreur.
+	        System.err.println("Impossible de charger les contacts personnels pour l'utilisateur ID: " + ownerUserId);
+	    }
+	    return contacts;
 	}
 
 	private void connectToPeer(String peerUsername, String host, int port) {
@@ -3377,6 +3396,16 @@ public class Mainfirstclientcontroller implements Initializable {
 	    System.out.println("Identifiants client définis : "
 	            + (this.currentUser != null ? this.currentUser.getNomUtilisateur() : "null") + " (ID: "
 	            + (this.currentUser != null ? this.currentUser.getId() : "N/A") + ")");
+
+	    Platform.runLater(() -> {
+	        if (currentUser != null && currentUsernameLabel != null && currentUserAvatar != null) {
+	            // Mettre à jour le nom d'utilisateur dans le label
+	            currentUsernameLabel.setText(currentUser.getNomUtilisateur());
+	            
+	            // Mettre à jour la photo de profil dans le cercle
+	            updateProfilePictureUI(bytesToImage(currentUser.getProfilePicture()));
+	        }
+	    });
 	}
 	@FXML
 	void handleAudioCall(ActionEvent event) {

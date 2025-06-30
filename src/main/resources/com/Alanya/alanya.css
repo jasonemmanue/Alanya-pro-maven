@@ -608,3 +608,51 @@
 .message-status-indicator.read { /* Classe à ajouter si message lu */
     -fx-text-fill: #3498DB; /* Bleu pour lu */
 }
+
+
+.menu-button .context-menu {
+    -fx-background-color: #34495E; /* Couleur de fond foncée pour le menu déroulant */
+    -fx-background-insets: 0;
+    -fx-padding: 5px 0; /* Espacement intérieur */
+    -fx-background-radius: 5px;
+    -fx-border-color: #2C3E50; /* Bordure foncée */
+    -fx-border-width: 1px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 5); /* Légère ombre */
+}
+
+/* Style général pour les MenuItem */
+.menu-item {
+    -fx-padding: 8px 15px; /* Padding pour chaque item */
+    -fx-text-fill: #ECF0F1; /* Texte en blanc cassé par défaut */
+    -fx-font-size: 1.0em;
+    -fx-background-color: transparent; /* Fond transparent par défaut */
+}
+
+/* Style des MenuItem au survol */
+.menu-item:focused, .menu-item:hover {
+    -fx-background-color: #4A6C8C; /* Couleur de fond au survol (bleu-gris moyen) */
+    -fx-text-fill: white; /* Texte en blanc au survol */
+}
+
+/* Style pour le texte des MenuItem */
+.menu-item .label {
+    -fx-text-fill: inherit; /* Hérite de la couleur du parent (.menu-item) */
+}
+
+/* Ajoutez un style pour chaque MenuItem pour des personnalisations futures */
+#menuItemModifierPhotoProfil {
+    /* Styles spécifiques si besoin, par exemple: */
+    /* -fx-font-weight: bold; */
+}
+
+#menuItemModifierArrierePlan {
+    /* Styles spécifiques */
+}
+
+#menuItemThemeSombre {
+    /* Styles spécifiques */
+}
+
+#menuItemServiceclient {
+    /* Styles spécifiques */
+}

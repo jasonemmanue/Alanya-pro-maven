@@ -14,6 +14,7 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+
 public class MainAthentification extends Application {
 
     private MainAthentificationcontroller controller;
@@ -38,9 +39,9 @@ public class MainAthentification extends Application {
         welcomeText.setEffect(new DropShadow(5, Color.web("#222")));  // Ombre douce
 
         StackPane welcomeRoot = new StackPane(welcomeText);
-        welcomeRoot.setStyle("-fx-background-color: #cce7ff;");  // Fond bleu clair
+        welcomeRoot.setStyle("-fx-background-color:#34495E;");  // Fond bleu clair
 
-        Scene welcomeScene = new Scene(welcomeRoot, 900, 500);
+        Scene welcomeScene = new Scene(welcomeRoot, 1000, 600);
 
         primaryStage.setTitle("Bienvenue");
         primaryStage.setScene(welcomeScene);
@@ -97,9 +98,9 @@ public class MainAthentification extends Application {
 
             stage.setTitle("ALANYA");
 
-            Scene scene = new Scene(root, 700, 500);
+            Scene scene = new Scene(root, 1000, 600);
             stage.setScene(scene);
-            stage.setResizable(false);
+            stage.setResizable(true);
             stage.centerOnScreen();
 
         } catch (Exception e) {

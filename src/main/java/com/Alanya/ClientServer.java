@@ -145,7 +145,7 @@ public class ClientServer implements Runnable {
                         }
 
                         // Afficher le message dans l'interface
-                        Platform.runLater(() -> uiController.displayMessage(msg, false));
+                        Platform.runLater(() -> uiController.processIncomingP2PMessage(msg));
 
                         // Envoyer l'accusé de réception (Reçu ou Lu)
                         MessageStatusUpdateMessage statusUpdate = new MessageStatusUpdateMessage(msg.getDatabaseId(), newStatus);

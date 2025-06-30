@@ -8,20 +8,33 @@ import javafx.application.Platform;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Consumer; // Remplacé par un type plus spécifique si nécessaire
+import java.util.function.Consumer; 
+import java.util.function.BiConsumer;
 
 public class NotificationService {
 
     private final Map<Integer, Integer> unreadMessagesCount = new HashMap<>();
     private final MessageDAO messageDAO;
     private final UserDAO userDAO; // Pour résoudre les ID en noms d'utilisateur si nécessaire
-
+    private BiConsumer<Message, Boolean> messageDisplayCallback;
+    
     // Callback pour rafraîchir la ListView des contacts dans le Mainfirstclientcontroller
     private Consumer<Integer> contactListRefreshCallbackBySenderId; // Prend l'ID de l'expéditeur
 
     public NotificationService(MessageDAO messageDAO, UserDAO userDAO) {
         this.messageDAO = messageDAO;
         this.userDAO = userDAO;
+    }
+    
+    public void setMessageDisplayCallback(BiConsumer<Message, Boolean> callback) {
+        this.messageDisplayCallback = callback;
+    }
+    
+    public void setInitialUnreadCounts(Map<Integer, Integer> counts) {
+        this.unreadMessagesCount.clear();
+        if (counts != null) {
+            this.unreadMessagesCount.putAll(counts);
+        }
     }
 
     public void setContactListRefreshCallback(Consumer<Integer> callback) {
@@ -32,11 +45,6 @@ public class NotificationService {
         if (senderId == currentUserId) { // Message envoyé par l'utilisateur actuel à lui-même (ou écho) // 
             return;
         }
-
-        // Le message vient d'être reçu par currentUserId (qui est le destinataire).
-        // On met à jour son statut à "Reçu" (1) dans la BDD.
-        // L'expéditeur (senderId) devra être notifié pour mettre à jour son affichage à "✓✓" (deux justes gris).
-        // Cette notification P2P est une logique supplémentaire à implémenter.
         try {
             if (message.getDatabaseId() > 0) { // S'assurer que le message a un ID de la BDD
                 // Ici, currentUserId EST le destinataire du message.
@@ -71,14 +79,22 @@ public class NotificationService {
                 e.printStackTrace(); // 
                 System.err.println("NotificationService: Erreur lors du marquage des messages comme lus pour " + senderId); // 
             }
+            
+            if (messageDisplayCallback != null) {
+                // Le 'false' indique que c'est un message entrant
+                Platform.runLater(() -> messageDisplayCallback.accept(message, false));
+            }
+            unreadMessagesCount.put(senderId, 0);
+            
+            
         } else {
             // La discussion n'est pas ouverte, incrémenter le compteur de messages non lus
-            int newCount = unreadMessagesCount.getOrDefault(senderId, 0) + 1; // 
-            unreadMessagesCount.put(senderId, newCount); // 
-            System.out.println("NotificationService: Message non lu reçu de " + senderId + ". Nouveau compte: " + newCount); // 
+            int newCount = unreadMessagesCount.getOrDefault(senderId, 0) + 1;
+            unreadMessagesCount.put(senderId, newCount);
+            System.out.println("NotificationService: Message non lu reçu de " + senderId + ". Nouveau compte: " + newCount);
         }
         // Toujours rafraîchir l'UI pour ce contact pour mettre à jour le badge/statut
-        updateContactNotificationUI(senderId); // 
+        updateContactNotificationUI(senderId);
     }
 
     public void onDiscussionOpened(int contactIdOpened, int currentUserId) {

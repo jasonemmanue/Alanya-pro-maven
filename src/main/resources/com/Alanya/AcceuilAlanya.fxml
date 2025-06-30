@@ -20,12 +20,12 @@
          <children>
          
             <HBox alignment="CENTER"> <children>
-                  <MenuButton cache="false" styleClass="sidebar-menu-button" text="MENU ☰">
+                  <MenuButton cache="false" styleClass="sidebar-menu-button" text="MENU ☰" textFill="#100e0e">
                      <items>
-                        <MenuItem onAction="#handleEditProfilePic" text="Modifier photo profil" />
-                        <MenuItem onAction="#handleEditBackground" text="Modifier arrière-plan discussion" />
-                        <MenuItem onAction="#handleTheme" text="Thème Sombre" />
-                        <MenuItem onAction="#handleSupport" text="Service client" />
+                        <MenuItem fx:id="menuItemModifierPhotoProfil" onAction="#handleEditProfilePic" text="Modifier photo profil" styleClass="menu-item, menuItemModifierPhotoProfil" />
+                        <MenuItem fx:id="menuItemModifierArrierePlan" onAction="#handleEditBackground" text="Modifier arrière-plan discussion" styleClass="menu-item, menuItemModifierArrierePlan" />
+                        <MenuItem fx:id="menuItemThemeSombre" onAction="#handleTheme" text="Thème Sombre" styleClass="menu-item, menuItemThemeSombre" />
+                        <MenuItem fx:id="menuItemServiceclient" onAction="#handleSupport" text="Service client" styleClass="menu-item, menuItemServiceclient" />
                      </items>
                   </MenuButton>
                </children>

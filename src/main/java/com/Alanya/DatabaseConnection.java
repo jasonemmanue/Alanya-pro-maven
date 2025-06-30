@@ -1,5 +1,71 @@
 package com.Alanya;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+
+public class DatabaseConnection {
+
+    private static final String HOST = "163.123.183.89"; 
+    private static final String PORT = "17705"; 
+    private static final String DB_NAME = "alaniaOther"; 
+    private static final String USER = "people"; 
+    private static final String PASSWORD = "people2030";
+    private static final String URL = "jdbc:mysql://" + HOST + ":" + PORT + "/" + DB_NAME;
+
+    private static HikariDataSource dataSource;
+
+    static {
+        try {
+            HikariConfig config = new HikariConfig();
+            config.setJdbcUrl(URL);
+            config.setUsername(USER);
+            config.setPassword(PASSWORD);
+            config.setMaxLifetime(1800000); // 30 minutes
+            config.setIdleTimeout(600000); // 10 minutes
+            config.setConnectionTimeout(30000); // 30 secondes
+            config.setMinimumIdle(5); 
+            config.setMaximumPoolSize(20);
+            
+            config.addDataSourceProperty("cachePrepStmts", "true");
+            config.addDataSourceProperty("prepStmtCacheSize", "250");
+            config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048"); 
+            config.addDataSourceProperty("serverTimezone", "UTC");
+            config.addDataSourceProperty("useSSL", "true");
+
+            dataSource = new HikariDataSource(config);
+            
+            System.out.println("Pool de connexions HikariCP robustement configuré !");
+
+        } catch (Exception e) {
+            System.err.println("Erreur critique : Impossible d'initialiser le pool de connexions HikariCP.");
+            e.printStackTrace();
+        }
+    }
+
+    public static Connection getConnection() throws SQLException {
+        if (dataSource == null) {
+            throw new SQLException("Le pool de connexions (DataSource) n'a pas pu être initialisé.");
+        }
+        return dataSource.getConnection();
+    }
+    
+    public static void closeDataSource() {
+        if (dataSource != null && !dataSource.isClosed()) {
+            dataSource.close();
+            System.out.println("Pool de connexions HikariCP fermé.");
+        }
+    }
+}
+
+
+
+
+
+
+/*package com.Alanya;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -41,7 +107,7 @@ public class DatabaseConnection {
 }
 
 
-
+*/
 
 
 

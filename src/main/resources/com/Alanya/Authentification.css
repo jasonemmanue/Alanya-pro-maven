@@ -1,189 +1,207 @@
-/* Authentification.css */
-/* Thème principal inspiré de WelcomePageController.fxml et SignUpCOntroller.fxml (Bleu et Blanc) */
+/* ==========================================================================
+   Authentification.css - Thème Alanya Professionnel
+   ========================================================================== */
 
-/* Style de base pour les boutons */
-.button {
-    -fx-scale-x: 1.0;
-    -fx-scale-y: 1.0;
-    -fx-transition: scale 0.2s ease-in-out;
-    -fx-font-family: "System"; /* Police inspirée de WelcomePageController/SignUpCOntroller */
-    -fx-font-size: 14px;
-    -fx-background-color: #E0E0E0; /* Un gris clair par défaut, sera surchargé par les ID pour des styles spécifiques */
-    -fx-background-radius: 3;
-    -fx-pref-width: 160px; /* Largeur par défaut */
-    -fx-pref-height: 30px; /* Hauteur par défaut */
-    -fx-text-fill: #333333; /* Couleur de texte par défaut pour les boutons standards */
-    -fx-padding : 8px;
+/* --- Conteneur Racine (StackPane) --- */
+.auth-root {
+    -fx-background-color: #34495E; /* Fond sombre par défaut si l'image ne charge pas */
 }
 
-.button:hover {
-    -fx-scale-x: 1.05; /* Effet de survol subtil par défaut */
-    -fx-scale-y: 1.05;
-    -fx-background-color: #D0D0D0; /* Un peu plus foncé au survol par défaut */
-}
-
-/* Style de base pour les labels */
-.label {
-    -fx-font-family: "System"; /* Police inspirée de WelcomePageController/SignUpCOntroller */
-    -fx-font-size: 12px;       /* Taille de base, peut être surchargée */
-    -fx-padding : 4px;
-    -fx-text-fill: #FFFFFF; /* Couleur de texte par défaut pour les labels sur fond bleu */
-}
-
-/* Styles pour les champs de texte et mot de passe */
-TextField, PasswordField {
-    -fx-font-family: "System";
-    -fx-font-size: 12px;
-    -fx-background-color: #FFFFFF; /* Fond blanc comme dans WelcomePage/SignUpCOntroller */
-    -fx-text-fill: #000000; /* Texte noir */
-    -fx-border-color: #B0B0B0; /* Bordure grise discrète */
+/* --- Conteneur du Formulaire (VBox) --- */
+.auth-form-container {
+    -fx-max-width: 420px;
+    -fx-padding: 40px;
+    -fx-spacing: 20px;
+    /* Fond semi-transparent avec bordure subtile */
+    -fx-background-color: rgba(44, 62, 80, 0.90); /* #2c3e50 avec 90% d'opacité */
+    -fx-background-radius: 20px;
+    -fx-border-radius: 20px;
+    -fx-border-color: rgba(52, 152, 219, 0.2); /* #3498DB avec 20% d'opacité */
     -fx-border-width: 1px;
-    -fx-border-radius: 3px;
-    -fx-background-radius: 3px;
-    -fx-pref-height: 30px;
-    -fx-prompt-text-fill: #A0A0A0; /* Couleur du placeholder */
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 20, 0, 0, 0);
 }
 
-/* --- Styles pour les pages d'authentification (fx:id="principalbox" ou fx:id="inscriptionpage") --- */
-
-#principalbox, #inscriptionpage { /* Appliquer le thème bleu aux deux conteneurs principaux d'authentification */
-    -fx-background-color: #2196F3; /* Couleur bleue dominante */
-    -fx-background-repeat: no-repeat;
-    -fx-background-size: cover;    /* Ajuste la taille de l'image pour couvrir la zone */
-    -fx-background-position: center;
-   
-}
-#principalbox { -fx-background-image: url("imglogin.png"); -fx-background-size: 70%; } 
-#inscriptionpage { -fx-background-image: url("imgsign.png");-fx-background-size: 70%; }
-
-   
-
-/* Style pour le titre principal (Ex: "SE CONNECTER OU CRÉER UN COMPTE ALANYA" ou "Créer un compte") */
-/* S'applique au premier Label dans le premier VBox enfant de #principalbox ou #inscriptionpage */
-#principalbox > VBox:first-child > Label,
-#inscriptionpage > VBox:first-child > Label {
-    -fx-font-family: "System";
+/* --- Titres --- */
+.auth-title {
+    -fx-font-size: 26px;
     -fx-font-weight: bold;
-    -fx-font-size: 16px;       /* Inspiré de #login_panel ou titre de SignUp */
-    -fx-text-fill: #FFFFFF;    /* Texte blanc sur fond bleu */
-    -fx-padding: 10px 0px;
-}
-/* Si vous avez un ID spécifique comme #mainAuthTitleLabel pour le titre de la page de connexion/choix */
-#mainAuthTitleLabel {
-    -fx-font-family: "System";
-    -fx-font-weight: bold;
-    -fx-font-size: 16px;
-    -fx-text-fill: #FFFFFF;
-    -fx-padding: 10px 0px;
+    -fx-text-fill: white;
 }
 
-
-/* Styles pour les labels des champs de formulaire sur les pages d'authentification */
-/* (Ex: "Nom d'utilisateur:", "Mot de passe:") */
-#principalbox VBox Label,
-#inscriptionpage VBox Label { /* Cible les labels dans les VBox des pages d'auth */
-    /* Cette règle est générale. Le titre ci-dessus est plus spécifique. */
-    -fxtext-fill: #FFFFFF;    /* Texte blanc sur fond bleu */
-    -fx-font-family: "System";
-    -fx-font-size: 12px;      /* Taille standard pour les labels de champs */
-}
-/* Style pour .slabel si utilisé pour les labels de champs */
-.slabel {
-    -fx-font-family: "System";
-    -fx-font-weight: bold;    /* Souvent utilisé pour les labels de formulaire dans SignUp */
-    -fx-font-size: 14px;      /* Un peu plus grand pour les labels de champs */
-    -fx-text-fill: #FFFFFF;   /* Texte blanc sur fond bleu */
-    -fx-padding : 4px 0px 4px 4px;
-    -fx-pref-width: auto;     /* Laisser la largeur s'adapter */
-}
-
-
-/* --- Styles spécifiques des boutons pour les pages d'authentification --- */
-
-/* Bouton "SE CONNECTER" (fx:id="connectbutton") sur la page de connexion/choix */
-#connectbutton {
-    -fx-background-color: #FFFFFF; /* Fond blanc */
-    -fx-text-fill: #2196F3;    /* Texte bleu (couleur du fond principal) */
-    -fx-font-family: "System";
-    -fx-font-weight: bold;
+.auth-subtitle {
     -fx-font-size: 14px;
-    -fx-pref-width: 150px;
-    -fx-pref-height: 35px;
-    -fx-background-radius: 3px;
-    -fx-border-color: #2196F3;   /* Optionnel: bordure bleue */
-    -fx-border-width: 1px;
-    -fx-border-radius: 3px;
-    -fx-padding : 8px;
-}
-#connectbutton:hover {
-    -fx-background-color: #E8E8E8; /* Léger gris au survol */
-    -fx-scale-x: 1.0;
-    -fx-scale-y: 1.0;
+    -fx-text-fill: #bdc3c7; /* Gris clair */
+    -fx-padding: 0 0 15px 0;
 }
 
-/* Bouton "S'INSCRIRE" (fx:id="inscriptmenu") sur la page de connexion/choix */
-#inscriptmenu {
-    -fx-background-color: transparent; /* Fond transparent */
-    -fx-text-fill: #FFFFFF;        /* Texte blanc */
-    -fx-font-family: "System";
+/* --- Conteneur pour chaque champ de saisie (Label + TextField) --- */
+.input-field-container {
+    -fx-spacing: 8px;
+}
+
+.input-label {
     -fx-font-size: 13px;
-    -fx-underline: true;           /* Souligné comme un lien */
-    -fx-pref-width: 150px;
-    -fx-pref-height: 35px;
-    -fx-padding : 8px;
-}
-#inscriptmenu:hover {
-    -fx-text-fill: #D0E8FF;        /* Couleur de survol pour le texte */
-    -fx-scale-x: 1.0;
-    -fx-scale-y: 1.0;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ecf0f1; /* Blanc cassé */
 }
 
-/* Bouton "S'INSCRIRE" (fx:id="inscriptionbutton") sur la page d'inscription (SignUp) */
-/* Et bouton "J'AI DÉJÀ UN COMPTE" (fx:id="returnbutton") sur la page d'inscription */
-/* Ces ID étaient dans vos FXML précédents. */
-#inscriptionbutton { /* Bouton principal sur la page d'inscription */
-    -fx-background-color: #FFFFFF;
-    -fx-text-fill: #243beb;     /* Bleu de SignUpCOntroller */
-    -fx-font-family: "System";
+/* --- Champs de Texte (TextField & PasswordField) --- */
+.text-field-styled, .input-group {
+    -fx-background-color: rgba(0, 0, 0, 0.25);
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-border-width: 1px;
+    -fx-border-color: rgba(52, 152, 219, 0.3);
+    -fx-padding: 8px 12px;
+    -fx-font-size: 14px;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.input-group > .image-view {
+    -fx-opacity: 0.7;
+}
+
+.text-field-transparent {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: #95a5a6; /* Gris */
+    -fx-padding: 0 0 0 10px; /* Espace après l'icône */
+}
+
+.text-field-styled {
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: #95a5a6;
+}
+
+.text-field-styled:focused, .input-group:focused-within {
+     -fx-border-color: #3498DB; /* Bleu au focus */
+     -fx-effect: dropshadow(gaussian, rgba(52, 152, 219, 0.5), 10, 0, 0, 0);
+}
+
+/* --- Boutons --- */
+.auth-button-primary {
+    -fx-background-color: #3498DB; /* Bleu Alanya */
+    -fx-text-fill: white;
     -fx-font-weight: bold;
     -fx-font-size: 14px;
-    -fx-pref-width: 180px;     /* Ajusté */
-    -fx-pref-height: 35px;    /* Ajusté */
-}
-#inscriptionbutton:hover {
-    -fx-background-color: #E8E8E8;
+    -fx-background-radius: 8px;
+    -fx-padding: 15px;
+    -fx-cursor: hand;
 }
 
-#returnbutton { /* Bouton secondaire sur la page d'inscription, ou autre usage */
+.auth-button-primary:hover {
+    -fx-background-color: #4ea8e1;
+}
+
+.link-button {
     -fx-background-color: transparent;
-    -fx-text-fill: #FFFFFF;        /* Blanc sur fond bleu */
+    -fx-text-fill: #3498DB;
+    -fx-font-weight: bold;
+    -fx-underline: false;
+    -fx-cursor: hand;
+    -fx-padding: 5px;
+}
+
+.input-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ecf0f1; /* Blanc cassé */
+    /* Assure que le texte est bien aligné à droite dans la grille */
+    -fx-alignment: CENTER_RIGHT;
+}
+
+.link-button:hover {
     -fx-underline: true;
-    -fx-font-family: "System";
-    -fx-font-weight: bold;
-    -fx-font-size:13px;        /* Taille ajustée */
-    -fx-pref-width: 190px;
-    -fx-pref-height: 35px;
-    -fx-padding : 8px;
-}
-#returnbutton:hover{
-     -fx-text-fill: #D0E8FF;
-     -fx-scale-x: 1.0; /* Pas de scale au survol pour un look plus plat */
-     -fx-scale-y: 1.0;
 }
 
-/* --- Autres styles (à vérifier pour pertinence avec le nouveau thème) --- */
-#ntext, #mtext{
-    -fx-background-color: #A0D2FA; /* Un bleu plus clair pour contraster sur #2196F3 */
-    -fx-text-fill: #000000; /* Texte noir pour lisibilité */
-    -fx-background-radius: 10;
-    -fx-pref-width: 50px;
-    -fx-pref-height: 25px;
-    -fx-font-family: "System";
+/* --- Textes Secondaires --- */
+.secondary-text {
+    -fx-text-fill: #bdc3c7;
 }
 
-#createlabel, #connectionlabel { /* Utilisés potentiellement pour des titres de section */
-    -fx-font-family: "System";
+.error-label, #connectionlabel {
+    -fx-text-fill: #e74c3c; /* Rouge pour les erreurs */
     -fx-font-weight: bold;
-    -fx-font-size:16px;
-    -fx-text-fill: #FFFFFF; /* Texte blanc sur fond bleu */
+}
+
+.form-scroll-pane {
+    -fx-background-color: transparent;
+}
+
+.form-scroll-pane > .viewport {
+   -fx-background-color: transparent;
+}
+
+/* Cache complètement les boutons fléchés en haut et en bas */
+.form-scroll-pane .scroll-bar .increment-button,
+.form-scroll-pane .scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-opacity: 0;
+}
+
+/* Style de base pour la barre de défilement (invisible par défaut) */
+.form-scroll-pane .scroll-bar:vertical,
+.form-scroll-pane .scroll-bar:horizontal {
+    -fx-background-color: transparent;
+}
+
+/* Style de la "piste" de la barre de défilement (invisible) */
+.form-scroll-pane .scroll-bar .track {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-background-radius: 4px;
+}
+
+/* Style du "pouce" (la partie que l'on fait glisser) */
+.form-scroll-pane .scroll-bar .thumb {
+    -fx-background-color: rgba(52, 152, 219, 0.5); /* Couleur bleue (#3498DB) semi-transparente */
+    -fx-background-insets: 2;
+    -fx-background-radius: 4px;
+}
+
+/* Rend le pouce un peu plus opaque et visible au survol du ScrollPane */
+.form-scroll-pane:hover .scroll-bar .thumb {
+    -fx-background-color: rgba(52, 152, 219, 0.8);
+}
+
+.form-scroll-pane {
+    -fx-background-color: transparent;
+}
+
+.form-scroll-pane > .viewport {
+   -fx-background-color: transparent;
+}
+
+/* Cache complètement les boutons fléchés en haut et en bas */
+.form-scroll-pane .scroll-bar .increment-button,
+.form-scroll-pane .scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-opacity: 0;
+}
+
+/* Style de base pour la barre de défilement (invisible par défaut) */
+.form-scroll-pane .scroll-bar:vertical,
+.form-scroll-pane .scroll-bar:horizontal {
+    -fx-background-color: transparent;
+}
+
+/* Style de la "piste" de la barre de défilement (invisible) */
+.form-scroll-pane .scroll-bar .track {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-background-radius: 4px;
+}
+
+/* Style du "pouce" (la partie que l'on fait glisser) */
+.form-scroll-pane .scroll-bar .thumb {
+    -fx-background-color: rgba(52, 152, 219, 0.5); /* Couleur bleue (#3498DB) semi-transparente */
+    -fx-background-insets: 2;
+    -fx-background-radius: 4px;
+}
+
+/* Rend le pouce un peu plus opaque et visible au survol du ScrollPane */
+.form-scroll-pane:hover .scroll-bar .thumb {
+    -fx-background-color: rgba(52, 152, 219, 0.8);
 }
