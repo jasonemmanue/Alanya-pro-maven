@@ -70,5 +70,11 @@
     <profiles>
         <profile><id>run-client</id><properties><main.class>com.Alanya.MainAthentification</main.class></properties></profile>
         <profile><id>run-server</id><properties><main.class>com.Alanya.AlanyaCentralServer</main.class></properties></profile>
+        <profile>
+            <id>run-admin</id>
+            <properties>
+                <main.class>com.Alanya.AdminApp</main.class>
+            </properties>
+        </profile>
     </profiles>
 </project>

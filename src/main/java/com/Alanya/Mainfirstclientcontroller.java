@@ -37,6 +37,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -259,7 +260,7 @@ public class Mainfirstclientcontroller implements Initializable {
     private static final int EMOJI_SIZE = 24;
     private static final int EMOJI_BUTTON_SIZE = 32;
     
-    
+    private UserDAO userDAOForTheme;
 
     
     // Pour la capture vidéo
@@ -421,6 +422,8 @@ public class Mainfirstclientcontroller implements Initializable {
 	    attachmentService = new AttachmentService();
 	    attachmentService.setMainController(this);
 	    contactService.setMainController(this);
+	    
+	    this.userDAOForTheme = new UserDAO();
 
 	    contactListView.setItems(myPersonalContactsList);
 	    setupContactListViewCellFactory();
@@ -809,17 +812,101 @@ public class Mainfirstclientcontroller implements Initializable {
 	        return croppedImage;
 	    }
 	 
-	 
-    @FXML
-    void handleEditBackground(ActionEvent event) {
-        showAlert(AlertType.INFORMATION, "Fonctionnalité en cours", "La modification de l'arrière-plan de la discussion sera bientôt disponible.");
-    }
+	 @FXML
+	 private void handleEditBackground(ActionEvent event) {
+	        System.out.println("Menu 'Modifier l'arrière-plan' cliqué."); // Log de débogage
+	        try {
+	            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/Alanya/ThemeSelectionDialog.fxml"));
+	            Parent root = loader.load();
+	            ThemeSelectionController controller = loader.getController();
+	            controller.setMainController(this);
+	            Stage dialogStage = new Stage();
+	            dialogStage.setTitle("Modifier l'arrière-plan");
+	            dialogStage.initModality(Modality.APPLICATION_MODAL);
+	            dialogStage.initOwner(getStage());
+	            dialogStage.setScene(new Scene(root));
+	            dialogStage.showAndWait();
+	        } catch (IOException e) {
+	            e.printStackTrace();
+	        }
+	    }
 
-    @FXML
-    void handleTheme(ActionEvent event) {
-        showAlert(AlertType.INFORMATION, "Fonctionnalité en cours", "Le changement de thème (Sombre/Clair) sera bientôt disponible.");
-    }
-    
+	
+	 
+	 public void applyTheme(String themeType, byte[] imageData) {
+		    if (messagesContainerVBox == null || contactNAMEHBOX == null || messageInputContainer == null) {
+		        System.err.println("Erreur: Un des conteneurs FXML du chat n'est pas injecté !");
+		        return;
+		    }
+
+		    Platform.runLater(() -> {
+		        // Définir tous les conteneurs qui doivent changer de style
+		        final Node[] containersToStyle = {contactNAMEHBOX, messageInputContainer};
+
+		        // 1. Nettoyer les anciens styles
+		        messagesContainerVBox.getStyleClass().removeAll("theme-light-bg", "theme-dark-bg");
+		        messagesContainerVBox.setStyle(""); // Retire le style d'image en ligne
+		        
+		        for (Node container : containersToStyle) {
+		            container.getStyleClass().remove("theme-dark"); // Retire la classe sombre des autres éléments
+		        }
+
+		        // 2. Appliquer le nouveau style
+		        switch (themeType) {
+		            
+
+		            case "dark":
+		                messagesContainerVBox.getStyleClass().add("theme-dark-bg");
+		                // Appliquer la classe sombre à l'en-tête et à la zone de saisie
+		                for (Node container : containersToStyle) {
+		                    container.getStyleClass().add("theme-dark");
+		                }
+		                
+		            case "custom_image":
+		                if (imageData != null) {
+		                    String imageAsBase64 = Base64.getEncoder().encodeToString(imageData);
+		                    messagesContainerVBox.setStyle(
+		                        "-fx-background-image: url('data:image/png;base64," + imageAsBase64 + "'); " +
+		                        "-fx-background-size: 80%; " +
+		                        "-fx-background-position: center center;" +
+		                        "-fx-background-repeat: no-repeat;"
+		                    );
+		                    
+		                }
+		                break;
+		        }
+		    });
+
+		    // La logique de sauvegarde en BDD reste la même
+		    new Thread(() -> {
+		        try {
+		            userDAOForTheme.saveThemePreference(currentUser.getId(), themeType, imageData);
+		        } catch (SQLException e) {
+		            e.printStackTrace();
+		        }
+		    }).start();
+		}
+
+
+	 private void loadUserTheme() {
+		    new Thread(() -> {
+		        try {
+		            Map<String, Object> prefs = userDAOForTheme.loadThemePreference(currentUser.getId());
+		            if (prefs != null && !prefs.isEmpty()) {
+		                String type = (String) prefs.get("type");
+		                byte[] image = (byte[]) prefs.get("image");
+		                Platform.runLater(() -> applyTheme(type, image));
+		            } else {
+		                // Si aucune préférence n'est sauvegardée, appliquer le thème "light" par défaut
+		                Platform.runLater(() -> applyTheme("light", null));
+		            }
+		        } catch (SQLException e) {
+		            Platform.runLater(() -> applyTheme("light", null));
+		            e.printStackTrace();
+		        }
+		    }).start();
+		}
+
     private static class EmojiData {
         String unicode;
         String fileName;
@@ -1024,10 +1111,34 @@ public class Mainfirstclientcontroller implements Initializable {
     }
 
     @FXML
-    void handleSupport(ActionEvent event) {
-        showAlert(AlertType.INFORMATION, "Service Client", "Pour toute assistance, veuillez contacter le support à l'adresse : support@alanya.com.");
-    }
+    void handleServiceClient(ActionEvent event) {
+        if (currentUser == null) {
+            showAlert(AlertType.WARNING, "Non connecté", "Vous devez être connecté pour contacter le support.");
+            return;
+        }
 
+        try {
+            // Charger la vue FXML pour le chat de support
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/Alanya/SupportChat.fxml"));
+            Parent root = loader.load();
+
+            // Récupérer le contrôleur de la vue de support
+            SupportChatController supportController = loader.getController();
+            // Lui passer les informations de l'utilisateur actuel
+            supportController.initData(currentUser);
+
+            // Créer et afficher la nouvelle fenêtre
+            Stage stage = new Stage();
+            stage.setTitle("Support Client - Alanya");
+            stage.setScene(new Scene(root));
+            stage.initModality(Modality.APPLICATION_MODAL); 
+            stage.showAndWait();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            showAlert(AlertType.ERROR, "Erreur", "Impossible d'ouvrir la fenêtre du service client.");
+        }
+    }
     @FXML
     void handleEmoji(ActionEvent event) {
         // Inverse simplement l'état de visibilité actuel
@@ -1845,40 +1956,62 @@ public class Mainfirstclientcontroller implements Initializable {
 	}
 
 	private VBox createAttachmentDisplayNode(Message originalMessage, AttachmentInfo attachment, boolean isOutgoing) {
-        VBox attachmentBox = new VBox(5);
-        attachmentBox.getStyleClass().add("attachment-box");
+	    VBox attachmentBox = new VBox(5);
+	    attachmentBox.getStyleClass().add("attachment-box");
 
-        Text fileIconText = new Text("📄");
-        fileIconText.setStyle("-fx-font-size: 18px;");
-        Label fileNameLabel = new Label(attachment.getFileName() + " (" + formatFileSize(attachment.getFileSize()) + ")");
-        HBox fileInfoLine = new HBox(5, fileIconText, fileNameLabel);
+	    Text fileIconText = new Text("📄 ");
+	    fileIconText.setStyle("-fx-font-size: 18px;");
+	    Label fileNameLabel = new Label(attachment.getFileName() + " (" + formatFileSize(attachment.getFileSize()) + ")");
+	    HBox fileInfoLine = new HBox(5, fileIconText, fileNameLabel);
 
-        Button fileActionButton = new Button();
-        fileActionButton.getStyleClass().add("file-action-button");
-        
-        File localFile = null;
-        if (isOutgoing) {
-            // Pour l'expéditeur, le chemin est celui du fichier original
-            localFile = new File(attachment.getLocalPath());
-        } else {
-            // Pour le récepteur, on utilise notre nouvelle méthode de recherche simple et fiable
-            localFile = findDownloadedFile(originalMessage.getDatabaseId(), attachment.getFileName(), attachment.getFileSize());
-        }
+	    Button fileActionButton = new Button();
+	    fileActionButton.getStyleClass().add("file-action-button");
+	    
+	    // On vérifie si on a déjà un chemin local pour ce fichier
+	    File localFile = findLocallySavedFile(originalMessage);
 
-        if (localFile != null && localFile.exists()) {
-            // Si le fichier est trouvé, le bouton est "Ouvrir"
-            configureOpenButton(fileActionButton, localFile.getAbsolutePath());
-        } else {
-            // Ce cas ne devrait plus se produire pour un récepteur après réception.
-            // S'il se produit, cela indique une erreur de sauvegarde.
-            fileActionButton.setText("Erreur Fichier");
-            fileActionButton.setDisable(true);
-            fileActionButton.getStyleClass().add("file-action-error-button");
-        }
-        
-        attachmentBox.getChildren().addAll(fileInfoLine, fileActionButton);
-        return attachmentBox;
-    }
+	    if (localFile != null && localFile.exists()) {
+	        // Le fichier existe sur le disque, on affiche le bouton "Ouvrir"
+	        configureOpenButton(fileActionButton, localFile.getAbsolutePath());
+	    } else {
+	        // Le fichier n'est pas sur le disque, on doit proposer de le télécharger.
+	        // Ce cas ne devrait pas arriver pour les messages sortants, mais c'est une sécurité.
+	        if (!isOutgoing) {
+	            configureDownloadButton(fileActionButton, originalMessage, attachment);
+	        } else {
+	            // Pour un message sortant, si le fichier source a disparu, on montre une erreur.
+	            configureErrorButton(fileActionButton, originalMessage, attachment);
+	        }
+	    }
+	    
+	    attachmentBox.getChildren().addAll(fileInfoLine, fileActionButton);
+	    return attachmentBox;
+	}
+	
+	private File findLocallySavedFile(Message message) {
+	    if (message == null || message.getAttachmentInfo() == null) {
+	        return null;
+	    }
+	    AttachmentInfo attachment = message.getAttachmentInfo();
+	    
+	    // Le chemin peut déjà être dans l'objet si la conversation vient d'être chargée
+	    if (attachment.getLocalPath() != null && !attachment.getLocalPath().isEmpty()) {
+	        File f = new File(attachment.getLocalPath());
+	        if (f.exists()) return f;
+	    }
+
+	    // Sinon, on construit le nom de fichier attendu et on cherche dans le répertoire de sauvegarde
+	    // C'est utile si le chemin n'a pas été chargé en mémoire mais que le fichier est bien sur le disque.
+	    String expectedFileName = message.getDatabaseId() + "-" + attachment.getFileName();
+	    File expectedFile = new File(attachmentService.getCurrentDefaultDownloadPath(), expectedFileName);
+	    if (expectedFile.exists()) {
+	        // On met à jour l'objet en mémoire pour les futurs accès
+	        attachment.setLocalPath(expectedFile.getAbsolutePath());
+	        return expectedFile;
+	    }
+
+	    return null; // Le fichier n'a été trouvé nulle part
+	}
 
 
 
@@ -2306,86 +2439,39 @@ public class Mainfirstclientcontroller implements Initializable {
     private VBox createImageDisplayNode(Message message, AttachmentInfo imageAttachment, boolean isOutgoing) {
         VBox imageContainer = new VBox(5);
         imageContainer.getStyleClass().add("image-attachment-box");
-        imageContainer.setAlignment(Pos.CENTER_LEFT); // Ou CENTER
+        imageContainer.setId("attachment-container-" + message.getDatabaseId()); // ID unique
+        imageContainer.setAlignment(Pos.CENTER_LEFT);
 
-        ImageView previewImageView = new ImageView();
-        previewImageView.setPreserveRatio(true);
-        // La largeur sera limitée par la classe CSS "media-message-bubble" sur le parent VBox messageBubbleContent
-        previewImageView.setFitWidth(280); // Une largeur indicative pour le chargement, le CSS contrôlera
-        previewImageView.setFitHeight(220);
-        previewImageView.getStyleClass().add("chat-image-preview");
-
-        File imageFile = null;
-        // Essayer de trouver le fichier localement
-        if (imageAttachment.getLocalPath() != null && new File(imageAttachment.getLocalPath()).exists()) {
-            imageFile = new File(imageAttachment.getLocalPath());
-        } else if (!isOutgoing) {
-            imageFile = findDownloadedFile(message.getDatabaseId(), imageAttachment.getFileName(), imageAttachment.getFileSize());
-        }
+        File imageFile = findLocallySavedFile(message);
 
         if (imageFile != null && imageFile.exists()) {
+            // CAS 1: Le fichier est déjà sur le disque (logique inchangée)
             try {
-                // Charger l'image en arrière-plan pour ne pas bloquer l'UI
-                Image imageToLoad = new Image(imageFile.toURI().toString(), 280, 220, true, true, true); // true pour background loading
-                previewImageView.setImage(imageToLoad);
-                imageAttachment.setLocalPath(imageFile.getAbsolutePath());
+                ImageView previewImageView = new ImageView(new Image(imageFile.toURI().toString(), 280, 220, true, true, true));
+                previewImageView.getStyleClass().add("chat-image-preview");
+                previewImageView.setOnMouseClicked(event -> attachmentService.openAttachment(imageFile.getAbsolutePath()));
+                
+                HBox imageMetaInfoBox = new HBox(new Label("Image"), new Pane(), new Label(formatFileSize(imageAttachment.getFileSize())));
+                HBox.setHgrow(imageMetaInfoBox.getChildren().get(1), Priority.ALWAYS);
+                imageMetaInfoBox.getStyleClass().add("image-meta-info");
+
+                imageContainer.getChildren().addAll(previewImageView, imageMetaInfoBox);
             } catch (Exception e) {
-                System.err.println("Impossible de charger l'aperçu de l'image : " + imageFile.getPath() + " - " + e.getMessage());
-                previewImageView.setImage(null); // Ou une image placeholder d'erreur
-                Label errorLabel = new Label("Erreur image");
-                imageContainer.getChildren().setAll(errorLabel); // Remplacer par le label d'erreur
-                return imageContainer; // Retourner tôt
+                imageContainer.getChildren().add(new Label("Erreur chargement image"));
             }
-        } else if (!isOutgoing) { // Image reçue non téléchargée
-            Label downloadPrompt = new Label("Image (" + formatFileSize(imageAttachment.getFileSize()) + ")");
-            Button downloadImageButton = new Button("⬇️");
-            downloadImageButton.getStyleClass().add("download-image-button"); // Style spécifique si besoin
+        } else if (!isOutgoing) {
+            // CAS 2: Le fichier doit être téléchargé AUTOMATIQUEMENT
+            ProgressIndicator progress = new ProgressIndicator();
+            progress.setPrefSize(40, 40);
+            Label downloadLabel = new Label("Téléchargement de l'image...");
+            imageContainer.getChildren().addAll(progress, downloadLabel);
 
-            downloadImageButton.setOnAction(e -> {
-                downloadImageButton.setText("⏳"); downloadImageButton.setDisable(true);
-                if (attachmentService != null) {
-                    attachmentService.startFileDownload(message, getStage(),
-                        () -> { // Success
-                            File downloaded = new File(imageAttachment.getLocalPath()); // Path mis à jour
-                            localDownloadedFiles.put(message.getDatabaseId() + "_" + imageAttachment.getFileName(), downloaded);
-                            Platform.runLater(() -> {
-                                imageContainer.getChildren().clear(); // Nettoyer le bouton de téléchargement
-                                VBox newContent = createImageDisplayNode(message, imageAttachment, isOutgoing); // Recréer avec l'image
-                                imageContainer.getChildren().addAll(newContent.getChildren());
-                            });
-                        },
-                        () -> { // Failure
-                            Platform.runLater(() -> {
-                                imageContainer.getChildren().clear();
-                                imageContainer.getChildren().add(new Label("Échec téléchargement"));
-                            });
-                        }
-                    );
-                }
-            });
-            imageContainer.getChildren().addAll(downloadPrompt, downloadImageButton);
-            return imageContainer;
-        } else { // Image sortante, fichier source introuvable
+            // Appel de la nouvelle méthode de téléchargement automatique
+            startAutomaticFileDownload(message, imageAttachment);
+        } else {
+            // CAS 3: Erreur (message sortant, fichier source introuvable)
             imageContainer.getChildren().add(new Label("Source image perdue"));
-            return imageContainer;
         }
-
-        final File finalImageFileToOpen = imageFile;
-        previewImageView.setOnMouseClicked(event -> {
-            if (finalImageFileToOpen != null && finalImageFileToOpen.exists() && attachmentService != null) {
-                attachmentService.openAttachment(finalImageFileToOpen.getAbsolutePath());
-            }
-        });
-
-        // Méta-info sous l'image
-        HBox imageMetaInfoBox = new HBox();
-        Label imgTextLabel = new Label("Image");
-        Pane spacer = new Pane(); HBox.setHgrow(spacer, Priority.ALWAYS);
-        Label imgSizeLabel = new Label(formatFileSize(imageAttachment.getFileSize()));
-        imageMetaInfoBox.getChildren().addAll(imgTextLabel, spacer, imgSizeLabel);
-        imageMetaInfoBox.getStyleClass().add("image-meta-info");
-
-        imageContainer.getChildren().addAll(previewImageView, imageMetaInfoBox);
         return imageContainer;
     }
 	 private void captureImageFromPreview() {
@@ -2664,115 +2750,51 @@ public class Mainfirstclientcontroller implements Initializable {
                 voiceRecordingPane.setVisible(false);
                 voiceRecordingPane.setManaged(false);
             }
-            // **CORRECTION ICI**
             updateSendButtonState(messageField != null ? messageField.getText() : "",
                                   attachmentService != null && attachmentService.getCurrentAttachmentInfo() != null);
             // Ne pas changer updateStatus ici pour potentiellement garder un message d'erreur
         });
     }
 
-
 	private VBox createVoiceMessageDisplayNode(Message message, AttachmentInfo voiceAttachment, boolean isOutgoing) {
-		VBox voiceMessageContainer = new VBox(5); // Espacement global pour ce conteneur
-		voiceMessageContainer.getStyleClass().add("voice-message-box");
+	    VBox voiceMessageContainer = new VBox(5);
+	    voiceMessageContainer.getStyleClass().add("voice-message-box");
+	    voiceMessageContainer.setId("attachment-container-" + message.getDatabaseId()); // ID unique
 
-		// 1. Titre "Message vocal"
-		Label voiceTitleLabel = new Label("Message vocal");
-		voiceTitleLabel.getStyleClass().add("voice-title-label"); // Nouvelle classe CSS
+	    Label voiceTitleLabel = new Label("Message vocal");
+	    voiceTitleLabel.getStyleClass().add("voice-title-label");
+	    HBox metaInfoRow = new HBox(new Label("--:--"), new Pane(), new Label(formatFileSize(voiceAttachment.getFileSize())));
+	    HBox.setHgrow(metaInfoRow.getChildren().get(1), Priority.ALWAYS);
+	    metaInfoRow.setAlignment(Pos.CENTER_LEFT);
+	    HBox controlsRow = new HBox(8);
+	    controlsRow.setAlignment(Pos.CENTER_LEFT);
 
-		// 2. Ligne pour Méta-informations (Durée et Taille)
-		HBox metaInfoRow = new HBox();
-		metaInfoRow.setAlignment(Pos.CENTER_LEFT); // Pour que les éléments soient sur la même ligne
+	    File localVoiceFile = findLocallySavedFile(message);
 
-		Label durationDisplayLabel = new Label("--:--"); // Placeholder, sera mis à jour
-		durationDisplayLabel.getStyleClass().add("voice-meta-label");
-		durationDisplayLabel.getStyleClass().add("voice-duration-static"); // Classe spécifique pour la durée statique
+	    if (localVoiceFile != null && localVoiceFile.exists()) {
+	        // CAS 1: Le fichier est déjà sur le disque (logique inchangée)
+	        Button playPauseBtn = new Button();
+	        javafx.scene.control.ProgressBar progressBar = new javafx.scene.control.ProgressBar(0);
+	        HBox.setHgrow(progressBar, Priority.ALWAYS);
+	        Label playbackTimeLabel = new Label("00:00 / 00:00");
+	        configurePlayPauseButtonForVoice(playPauseBtn, progressBar, playbackTimeLabel, (Label) metaInfoRow.getChildren().get(0), localVoiceFile);
+	        controlsRow.getChildren().addAll(playPauseBtn, progressBar, playbackTimeLabel);
+	    } else if (!isOutgoing) {
+	        // CAS 2: Le fichier doit être téléchargé AUTOMATIQUEMENT
+	        ProgressIndicator progress = new ProgressIndicator();
+	        progress.setPrefSize(25, 25);
+	        Label downloadLabel = new Label("Téléchargement du message vocal...");
+	        controlsRow.getChildren().addAll(progress, downloadLabel);
 
-		Pane spacer = new Pane(); // Pour pousser la taille à droite
-		HBox.setHgrow(spacer, Priority.ALWAYS);
-
-		Label sizeDisplayLabel = new Label(formatFileSize(voiceAttachment.getFileSize())); // Utilise ta méthode
-																							// existante
-		sizeDisplayLabel.getStyleClass().add("voice-meta-label");
-		sizeDisplayLabel.getStyleClass().add("voice-size-label"); // Classe spécifique pour la taille
-
-		metaInfoRow.getChildren().addAll(durationDisplayLabel, spacer, sizeDisplayLabel);
-
-		// 3. Ligne pour les Contrôles de Lecture
-		HBox controlsRow = new HBox(8); // Espacement entre bouton, barre, et timer de lecture
-		controlsRow.setAlignment(Pos.CENTER_LEFT);
-
-		Button playPauseBtn = new Button(); // L'icône sera définie par configurePlayPauseButtonForVoice
-		// Le style du bouton vient de .voice-message-box .button dans le CSS
-
-		javafx.scene.control.ProgressBar progressBar = new javafx.scene.control.ProgressBar(0);
-		HBox.setHgrow(progressBar, Priority.ALWAYS); // La barre prend l'espace disponible
-
-		Label playbackTimeLabel = new Label("00:00 / 00:00"); // Timer de lecture actuel / total
-		playbackTimeLabel.getStyleClass().add("voice-playback-time-label"); // Nouvelle classe CSS
-
-		// Logique pour le fichier local et le bouton de téléchargement (similaire à
-		// avant)
-		File localVoiceFile = null;
-		if (isOutgoing) {
-			// Pour les messages sortants, le fichier est celui qui vient d'être enregistré
-			// ou sélectionné
-			// Le chemin est dans voiceAttachment.getLocalPath()
-			if (voiceAttachment.getLocalPath() != null) {
-				localVoiceFile = new File(voiceAttachment.getLocalPath());
-			}
-			if (localVoiceFile == null || !localVoiceFile.exists()) {
-				playPauseBtn.setText("⚠️"); // Source introuvable
-				playPauseBtn.setDisable(true);
-				durationDisplayLabel.setText("Source perdue"); // Mettre à jour le label de durée statique aussi
-				playbackTimeLabel.setText(""); // Pas de temps de lecture si erreur
-				System.err.println(
-						"Fichier source pour message vocal sortant introuvable: " + voiceAttachment.getLocalPath());
-			}
-		} else { // Message entrant
-			localVoiceFile = findDownloadedFile(message.getDatabaseId(), voiceAttachment.getFileName(),
-					voiceAttachment.getFileSize()); //
-			if (localVoiceFile == null || !localVoiceFile.exists()) {
-				playPauseBtn.setText("⬇️"); // Télécharger
-				playbackTimeLabel.setText(""); // Pas de temps de lecture avant téléchargement
-				// La durée statique est déjà à "--:--" ou sera mise à jour après téléchargement
-				playPauseBtn.setOnAction(e -> {
-					playPauseBtn.setText("⏳"); // Chargement
-					playPauseBtn.setDisable(true);
-					if (attachmentService != null) {
-						attachmentService.startFileDownload(message, getStage(), () -> { // Success
-							File downloaded = new File(voiceAttachment.getLocalPath());
-							localDownloadedFiles.put(message.getDatabaseId() + "_" + voiceAttachment.getFileName(),
-									downloaded);
-							Platform.runLater(() -> configurePlayPauseButtonForVoice(playPauseBtn, progressBar,
-									playbackTimeLabel, durationDisplayLabel, downloaded));
-						}, () -> { // Failure
-							Platform.runLater(() -> {
-								playPauseBtn.setText("⚠️");
-								playbackTimeLabel.setText("Échec Tél.");
-								playPauseBtn.setDisable(false);
-							});
-						});
-					} else {
-						System.err.println("AttachmentService non disponible pour télécharger le message vocal.");
-						playPauseBtn.setText("⚠️");
-						playbackTimeLabel.setText("Service Indisp.");
-					}
-				});
-			}
-		}
-
-		if (localVoiceFile != null && localVoiceFile.exists()) {
-			configurePlayPauseButtonForVoice(playPauseBtn, progressBar, playbackTimeLabel, durationDisplayLabel,
-					localVoiceFile);
-		}
-
-		controlsRow.getChildren().addAll(playPauseBtn, progressBar, playbackTimeLabel);
-
-		// Assembler le conteneur de message vocal
-		voiceMessageContainer.getChildren().addAll(voiceTitleLabel, metaInfoRow, controlsRow);
-
-		return voiceMessageContainer;
+	        // Appel de la nouvelle méthode de téléchargement automatique
+	        startAutomaticFileDownload(message, voiceAttachment);
+	    } else {
+	        // CAS 3: Erreur
+	        controlsRow.getChildren().add(new Label("Source audio perdue"));
+	    }
+	    
+	    voiceMessageContainer.getChildren().addAll(voiceTitleLabel, metaInfoRow, controlsRow);
+	    return voiceMessageContainer;
 	}
 
 	private void configurePlayPauseButtonForVoice(Button playPauseButton, javafx.scene.control.ProgressBar progressBar,
@@ -3060,60 +3082,132 @@ public class Mainfirstclientcontroller implements Initializable {
 	}
 
 	@FXML
-    void handleSendMessageButton(ActionEvent event) {
-        String content = messageField.getText().trim();
-        ClientDisplayWrapper selectedContactWrapper = contactListView.getSelectionModel().getSelectedItem();
+	void handleSendMessageButton(ActionEvent event) {
+	    String content = messageField.getText().trim();
+	    ClientDisplayWrapper selectedContactWrapper = contactListView.getSelectionModel().getSelectedItem();
 
-        if (selectedContactWrapper == null) {
-            showAlert(AlertType.WARNING, "Aucun destinataire", "Veuillez sélectionner un contact.");
-            return;
-        }
-        if (content.isEmpty() && (attachmentService == null || attachmentService.getCurrentAttachmentInfo() == null)) {
-            return;
-        }
+	    if (selectedContactWrapper == null) {
+	        showAlert(AlertType.WARNING, "Aucun destinataire", "Veuillez sélectionner un contact.");
+	        return;
+	    }
+	    // L'envoi est bloqué si le message et la pièce jointe sont tous deux vides
+	    if (content.isEmpty() && (attachmentService == null || attachmentService.getCurrentAttachmentInfo() == null)) {
+	        return;
+	    }
 
-        Client selectedContact = selectedContactWrapper.getClient();
-        Message messageToSend = new Message(currentUser.getNomUtilisateur(), selectedContact.getNomUtilisateur(), content);
-        
-        // Gérer la pièce jointe
-        if (attachmentService != null && attachmentService.getCurrentAttachmentInfo() != null) {
-            AttachmentInfo attachmentInfo = attachmentService.getCurrentAttachmentInfo();
-            File fileToSend = attachmentService.getSelectedFile();
-            if (fileToSend != null && fileToSend.exists()) {
-                try {
-                    byte[] fileData = Files.readAllBytes(fileToSend.toPath());
-                    attachmentInfo.setFileData(fileData);
-                    messageToSend.setAttachmentInfo(attachmentInfo);
-                } catch (IOException e) {
-                    showAlert(AlertType.ERROR, "Erreur Fichier", "Impossible de lire le fichier.");
+	    Client selectedContact = selectedContactWrapper.getClient();
+	    Message messageToSend = new Message(currentUser.getNomUtilisateur(), selectedContact.getNomUtilisateur(), content);
+
+	    // --- MISE À JOUR CRUCIALE : GESTION DE LA PIÈCE JOINTE ---
+	    if (attachmentService != null && attachmentService.getCurrentAttachmentInfo() != null) {
+	        AttachmentInfo attachmentInfo = attachmentService.getCurrentAttachmentInfo();
+	        File fileToSend = attachmentService.getSelectedFile();
+	        
+	        if (fileToSend != null && fileToSend.exists()) {
+	            try {
+	                // Étape 1 : Lire le contenu complet du fichier en mémoire (en octets)
+	                byte[] fileData = Files.readAllBytes(fileToSend.toPath());
+	                attachmentInfo.setFileData(fileData); // Stocker ces données dans l'objet AttachmentInfo
+	                messageToSend.setAttachmentInfo(attachmentInfo);
+	            } catch (IOException e) {
+	                showAlert(AlertType.ERROR, "Erreur Fichier", "Impossible de lire le fichier joint : " + e.getMessage());
+	                return; // On arrête l'envoi si la lecture du fichier échoue
+	            }
+	        }
+	    }
+	    // À ce stade, messageToSend contient le texte ET potentiellement les données binaires du fichier.
+
+	    // Étape 2 : Sauvegarder le message en BDD.
+	    // La méthode storeSentMessageInDB va maintenant aussi sauvegarder les données du fichier si elles existent.
+	    storeSentMessageInDB(messageToSend, currentUser.getId(), selectedContact.getId());
+	    if (messageToSend.getDatabaseId() <= 0) {
+	        showAlert(AlertType.ERROR, "Erreur d'envoi", "Impossible de sauvegarder le message avant l'envoi.");
+	        return;
+	    }
+
+	    // Étape 3 : Afficher immédiatement le message dans notre propre interface
+	    displayMessage(messageToSend, true);
+	    messageField.clear();
+	    if (attachmentService != null) {
+	        attachmentService.cancelFileSelection();
+	    }
+
+	    // Étape 4 : Essayer d'envoyer en P2P si le pair est en ligne
+	    PeerSession peerSession = activePeerSessions.get(selectedContact.getNomUtilisateur());
+	    if (peerSession != null && peerSession.isConnected()) {
+	        peerSession.sendMessage(messageToSend);
+	        System.out.println("Message envoyé en temps réel à " + selectedContact.getNomUtilisateur());
+	    } else {
+	        // Si le pair est hors ligne, le message et le fichier sont déjà stockés en BDD pour une livraison ultérieure.
+	        System.out.println("Destinataire hors ligne. Message et fichier stockés pour livraison ultérieure.");
+	    }
+	}
+	private void processOfflineMessages() {
+        if (currentUser == null || currentUser.getId() <= 0) return;
+
+        // On exécute tout dans un thread séparé pour ne pas geler l'interface
+        new Thread(() -> {
+            try {
+                MessageDAO dao = new MessageDAO();
+                List<Message> offlineMessages = dao.getOfflineMessagesForUser(currentUser.getId());
+
+                if (offlineMessages.isEmpty()) {
+                    System.out.println("Aucun message hors ligne à traiter.");
                     return;
                 }
+
+                System.out.println("Traitement de " + offlineMessages.size() + " message(s) hors ligne...");
+
+                for (Message msg : offlineMessages) {
+                    AttachmentInfo attachment = msg.getAttachmentInfo();
+                    
+                    // Si le message a une pièce jointe avec des données binaires
+                    if (attachment != null && attachment.getFileData() != null) {
+                        try {
+                            // --- LOGIQUE DE TÉLÉCHARGEMENT AUTOMATIQUE ---
+                            // 1. Définir un nom de fichier unique pour la sauvegarde pour éviter les conflits
+                            String saveFileName = msg.getDatabaseId() + "-" + attachment.getFileName();
+                            File savePath = new File(attachmentService.getCurrentDefaultDownloadPath(), saveFileName);
+                            
+                            // 2. Écrire les données binaires reçues dans le fichier sur le disque
+                            Files.write(savePath.toPath(), attachment.getFileData());
+                            
+                            // 3. Finaliser la livraison en BDD :
+                            //    - Mettre statut à 1 (Reçu)
+                            //    - Remplacer le chemin de l'expéditeur par notre nouveau chemin de sauvegarde
+                            //    - Mettre le champ des données binaires (fichier_donnees) à NULL
+                            dao.finalizeFileMessageDelivery(msg.getDatabaseId(), 1, savePath.getAbsolutePath());
+                            
+                            // 4. Mettre à jour l'objet en mémoire pour un affichage correct immédiat
+                            attachment.setLocalPath(savePath.getAbsolutePath());
+                            attachment.setFileData(null); // Vider les données binaires de la mémoire
+
+                        } catch (IOException | SQLException e) {
+                            System.err.println("Échec du traitement du fichier hors ligne ID " + msg.getDatabaseId() + ": " + e.getMessage());
+                            continue; // On passe au message suivant en cas d'erreur
+                        }
+                    } else if (msg.getDatabaseId() > 0) {
+                        // Si le message n'a pas de fichier, on le marque simplement comme "Reçu"
+                        dao.updateMessageReadStatus(msg.getDatabaseId(), 1);
+                    }
+                }
+
+                // Une fois tous les messages traités, on met à jour l'interface utilisateur
+                Platform.runLater(() -> {
+                    showAlert(AlertType.INFORMATION, "Nouveaux Messages", "Vous avez reçu " + offlineMessages.size() + " nouveau(x) message(s) pendant votre absence.");
+                    notificationService.loadInitialUnreadCounts(currentUser.getId());
+                    contactListView.refresh();
+                    // Recharger la conversation si une est ouverte
+                    ClientDisplayWrapper selectedWrapper = contactListView.getSelectionModel().getSelectedItem();
+                    if (selectedWrapper != null) {
+                        loadMessageHistory(currentUser.getId(), selectedWrapper.getClient().getId());
+                    }
+                });
+
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
-        }
-
-        // 1. Sauvegarder le message dans la BDD. C'est maintenant l'action principale.
-        storeSentMessageInDB(messageToSend, currentUser.getId(), selectedContact.getId());
-        if (messageToSend.getDatabaseId() <= 0) {
-            showAlert(AlertType.ERROR, "Erreur d'envoi", "Impossible de sauvegarder le message avant l'envoi.");
-            return;
-        }
-
-        // 2. Afficher le message immédiatement dans notre propre interface.
-        displayMessage(messageToSend, true);
-        messageField.clear();
-        if (attachmentService != null) {
-            attachmentService.cancelFileSelection();
-        }
-        
-        // 3. Essayer d'envoyer en P2P si le pair est connecté.
-        PeerSession peerSession = activePeerSessions.get(selectedContact.getNomUtilisateur());
-        if (peerSession != null && peerSession.isConnected()) {
-            peerSession.sendMessage(messageToSend);
-            System.out.println("Message envoyé en temps réel à " + selectedContact.getNomUtilisateur());
-        } else {
-            // Si non connecté, c'est tout bon. Le message est déjà dans la BDD.
-            System.out.println("Destinataire hors ligne. Message stocké pour livraison ultérieure.");
-        }
+        }).start();
     }
     
 	private void checkForOfflineMessages() {
@@ -3269,48 +3363,51 @@ public class Mainfirstclientcontroller implements Initializable {
 	}
 
 	public void handleCentralServerAuthenticated(String username, int userIdFromServer) {
-		if (this.currentUser == null || !this.currentUser.getNomUtilisateur().equals(username)) {
-			this.currentUser = findClientInSystemByUsername(username);
-			if (this.currentUser == null) {
-				this.currentUser = new Client();
-				this.currentUser.setNomUtilisateur(username);
-			}
-		}
-		if (userIdFromServer > 0) {
-			this.currentUser.setId(userIdFromServer);
-		}
-		System.out.println("Authentifié par serveur central: " + currentUser.getNomUtilisateur() + " (ID: "
-				+ currentUser.getId() + ")");
+	    // S'assurer que l'objet currentUser est bien défini
+	    if (this.currentUser == null || !this.currentUser.getNomUtilisateur().equals(username)) {
+	        this.currentUser = findClientInSystemByUsername(username);
+	        if (this.currentUser == null) {
+	            this.currentUser = new Client();
+	            this.currentUser.setNomUtilisateur(username);
+	        }
+	    }
+	    if (userIdFromServer > 0) {
+	        this.currentUser.setId(userIdFromServer);
+	    }
 
-		if (currentUserLabel != null && this.currentUser != null) {
-			currentUserLabel.setText("COMPTE DE : " + this.currentUser.getNomUtilisateur());
-		}
+	    System.out.println("Authentifié par serveur central: " + currentUser.getNomUtilisateur() + " (ID: " + currentUser.getId() + ")");
 
-		startClientP2PServer();
-		loadMyPersonalContacts();
+	    // Mettre à jour l'interface avec les infos de l'utilisateur
+	    Platform.runLater(() -> {
+	        if (currentUserLabel != null) {
+	            currentUserLabel.setText("COMPTE DE : " + this.currentUser.getNomUtilisateur());
+	        }
+	        if (currentUsernameLabel != null && currentUserAvatar != null) {
+	             currentUsernameLabel.setText(currentUser.getNomUtilisateur());
+	             updateProfilePictureUI(bytesToImage(currentUser.getProfilePicture()));
+	        }
+	    });
 
-		if (notificationService != null && this.currentUser != null && this.currentUser.getId() > 0) {
-			notificationService.loadInitialUnreadCounts(currentUser.getId());
-		} else {
-			System.err.println(
-					"handleCentralServerAuthenticated: NotificationService ou currentUser invalide pour charger les notifications.");
-		}
+	    // Démarrer le serveur P2P local du client
+	    startClientP2PServer();
 
-		if (scheduledExecutor != null && !scheduledExecutor.isShutdown()) {
-			try {
-				scheduledExecutor.scheduleAtFixedRate(this::refreshContactStatuses, 15, 45, TimeUnit.SECONDS);
-			} catch (Exception e) {
-				System.err.println("Impossible de planifier refreshContactStatuses: " + e.getMessage());
-			}
-		}
-		Platform.runLater(() -> {
-            if (currentUser != null) {
-                currentUsernameLabel.setText(currentUser.getNomUtilisateur());
-                Image profileImg = bytesToImage(currentUser.getProfilePicture());
-                currentUserAvatar.setFill(new ImagePattern(profileImg != null ? profileImg : defaultAvatar));
-            }
-        });
-		refreshContactStatuses();
+	    // Charger les contacts et les notifications
+	    loadMyPersonalContacts();
+	    if (notificationService != null && this.currentUser != null && this.currentUser.getId() > 0) {
+	        notificationService.loadInitialUnreadCounts(currentUser.getId());
+	    }
+
+	    // Planifier le rafraîchissement des statuts de présence
+	    if (scheduledExecutor != null && !scheduledExecutor.isShutdown()) {
+	        try {
+	            scheduledExecutor.scheduleAtFixedRate(this::refreshContactStatuses, 15, 45, TimeUnit.SECONDS);
+	        } catch (Exception e) {
+	            System.err.println("Impossible de planifier refreshContactStatuses: " + e.getMessage());
+	        }
+	    }
+	    
+	    // Juste après l'authentification, on vérifie et traite les messages reçus hors ligne.
+	    processOfflineMessages();
 	}
 
     private Image bytesToImage(byte[] bytes) {
@@ -3323,6 +3420,55 @@ public class Mainfirstclientcontroller implements Initializable {
         }
     }
     
+    
+    private void startAutomaticFileDownload(Message message, AttachmentInfo attachment) {
+        if (attachmentService == null) {
+            System.err.println("ERREUR : AttachmentService est null. Le téléchargement automatique est annulé.");
+            return;
+        }
+
+        // Définir le chemin de sauvegarde par défaut, sans demander à l'utilisateur
+        String saveFileName = message.getDatabaseId() + "-" + attachment.getFileName();
+        File finalSavePath = new File(attachmentService.getCurrentDefaultDownloadPath(), saveFileName);
+
+        // Callback pour gérer la fin du téléchargement
+        BiConsumer<Boolean, File> onCompleteCallback = (success, downloadedFile) -> {
+            if (success && downloadedFile != null) {
+                System.out.println("Téléchargement automatique réussi pour : " + downloadedFile.getName());
+                // Mettre à jour l'objet en mémoire pour un affichage futur
+                attachment.setLocalPath(downloadedFile.getAbsolutePath());
+
+                // On recherche le conteneur du message dans l'UI pour le remplacer
+                Platform.runLater(() -> {
+                    Node messageNode = messagesContainerVBox.lookup("#attachment-container-" + message.getDatabaseId());
+                    if (messageNode != null && messageNode.getParent() instanceof HBox) {
+                        HBox messageRow = (HBox) messageNode.getParent();
+                        int rowIndex = messagesContainerVBox.getChildren().indexOf(messageRow);
+                        if (rowIndex != -1) {
+                            // Recréer la bulle du message avec le contenu maintenant disponible
+                            displayMessage(message, false); // `false` car c'est un message entrant
+                            // Remplacer l'ancienne bulle (avec le loader) par la nouvelle
+                            messagesContainerVBox.getChildren().set(rowIndex, messageRow);
+                        }
+                    }
+                    // Rafraîchir toute la liste peut être une alternative plus simple
+                     contactListView.refresh();
+                });
+            } else {
+                System.err.println("Échec du téléchargement automatique pour : " + attachment.getFileName());
+                // Ici, vous pourriez mettre à jour l'UI pour afficher un bouton "Réessayer"
+            }
+        };
+
+        // Lancer la demande de téléchargement P2P
+        initiateP2PFileDownloadRequest(
+            message.getSender(),
+            message.getDatabaseId(),
+            attachment,
+            finalSavePath.getAbsolutePath(),
+            onCompleteCallback
+        );
+    }
     
 	public void peerConnected(String username) {
 		Platform.runLater(() -> {
@@ -3406,6 +3552,8 @@ public class Mainfirstclientcontroller implements Initializable {
 	            updateProfilePictureUI(bytesToImage(currentUser.getProfilePicture()));
 	        }
 	    });
+	    
+	    loadUserTheme();
 	}
 	@FXML
 	void handleAudioCall(ActionEvent event) {

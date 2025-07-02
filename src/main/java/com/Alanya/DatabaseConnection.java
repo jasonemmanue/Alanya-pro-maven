@@ -9,9 +9,9 @@ public class DatabaseConnection {
 
     private static final String HOST = "163.123.183.89"; 
     private static final String PORT = "17705"; 
-    private static final String DB_NAME = "alaniaOther"; 
-    private static final String USER = "people"; 
-    private static final String PASSWORD = "people2030";
+    private static final String DB_NAME = "alaniaBD"; 
+    private static final String USER = "military"; 
+    private static final String PASSWORD = "people2025";
     private static final String URL = "jdbc:mysql://" + HOST + ":" + PORT + "/" + DB_NAME;
 
     private static HikariDataSource dataSource;
@@ -22,9 +22,9 @@ public class DatabaseConnection {
             config.setJdbcUrl(URL);
             config.setUsername(USER);
             config.setPassword(PASSWORD);
-            config.setMaxLifetime(1800000); // 30 minutes
-            config.setIdleTimeout(600000); // 10 minutes
-            config.setConnectionTimeout(30000); // 30 secondes
+            config.setMaxLifetime(1800000); 
+            config.setIdleTimeout(600000); 
+            config.setConnectionTimeout(30000); 
             config.setMinimumIdle(5); 
             config.setMaximumPoolSize(20);
             

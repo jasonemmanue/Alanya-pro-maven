@@ -1,7 +1,5 @@
-// Fichier : ClientserverAlanya/src/com/Alanya/AlanyaCentralServer.java
 package com.Alanya;
 
-// ... Gardez toutes les importations et le début de la classe ...
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -20,6 +18,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import com.Alanya.DAO.UserDAO; // Import ajouté
+import com.Alanya.ServerCommand.ServerCommandType; // Import ajouté
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -297,7 +298,6 @@ public class AlanyaCentralServer extends Application {
         
         private void handleDisconnect() {
             if (isAuthenticated && authenticatedUsername != null) {
-                // CORRECTION : Mettre le statut à "hors-ligne" et non "actif"
                 updateClientStatusInDatabase(authenticatedUsername, "hors-ligne");
                 
                 AlanyaCentralServer.removeP2PClient(authenticatedUsername);
@@ -309,10 +309,8 @@ public class AlanyaCentralServer extends Application {
             }
         }
         
-        // ... gardez le reste de la classe ClientHandler (processCommand, handleAuthentication, etc.)
-        // La seule modification nécessaire était dans handleDisconnect.
         private void processCommand(ServerCommand command) throws IOException, SQLException {
-            if (!isAuthenticated && command.getType() != ServerCommand.ServerCommandType.AUTHENTICATE && command.getType() != ServerCommand.ServerCommandType.REGISTER) {
+            if (!isAuthenticated && command.getType() != ServerCommandType.AUTHENTICATE && command.getType() != ServerCommandType.REGISTER) {
                 sendResponse(false, "Vous devez d'abord vous authentifier.", null, ServerResponseType.AUTHENTICATION_FAILED);
                 return;
             }
@@ -321,6 +319,9 @@ public class AlanyaCentralServer extends Application {
             switch (command.getType()) {
                 case AUTHENTICATE:
                     handleAuthentication(command);
+                    break;
+                case REGISTER: // CAS AJOUTÉ
+                    handleRegistration(command);
                     break;
                 case DISCONNECT:
                     running = false;
@@ -343,6 +344,54 @@ public class AlanyaCentralServer extends Application {
                     break;
                 default:
                     sendResponse(false, "Commande non prise en charge.", null, ServerResponseType.GENERIC_ERROR);
+            }
+        }
+
+        /**
+         * **NOUVELLE MÉTHODE** - Gère l'inscription d'un nouvel utilisateur.
+         */
+        private void handleRegistration(ServerCommand command) throws IOException, SQLException {
+            Map<String, String> data = command.getData();
+            String username = data.get("username");
+            String password = data.get("password");
+            String email = data.get("email");
+            String phone = data.get("phone");
+
+            if (username == null || password == null || (email == null && phone == null)) {
+                sendResponse(false, "Données d'inscription incomplètes.", null, ServerResponseType.GENERIC_ERROR);
+                return;
+            }
+
+            try (Connection conn = DatabaseConnection.getConnection()) {
+                UserDAO userDAO = new UserDAO();
+
+                if (userDAO.findUserByUsername(username) != null) {
+                    sendResponse(false, "Ce nom d'utilisateur est déjà pris.", null, ServerResponseType.GENERIC_ERROR);
+                    return;
+                }
+                if (email != null && !email.isEmpty() && userDAO.findUserByEmail(email) != null) {
+                    sendResponse(false, "Cet email est déjà utilisé.", null, ServerResponseType.GENERIC_ERROR);
+                    return;
+                }
+
+                int newUserId;
+                boolean idExists;
+                java.util.Random rand = new java.util.Random();
+                
+                do {
+                    newUserId = 100000000 + rand.nextInt(900000000);
+                    idExists = userDAO.userIdExists(newUserId);
+                } while (idExists);
+
+                String hashedPassword = Client.hashMotDePasse(password);
+                Client registeredClient = userDAO.registerNewUserWithId(newUserId, username, hashedPassword, email, phone);
+
+                if (registeredClient != null) {
+                    controller.logMessage("Nouvel utilisateur enregistré: " + username + " avec UIA: " + newUserId);
+                    sendResponse(true, "Inscription réussie !", null, ServerResponseType.GENERIC_SUCCESS);
+                } else {
+                    sendResponse(false, "L'inscription a échoué côté serveur.", null, ServerResponseType.GENERIC_ERROR);
+                }
             }
         }
 
@@ -424,7 +473,7 @@ public class AlanyaCentralServer extends Application {
              if (!isAuthenticated) return;
             String targetUsername = command.getData().get("targetUsername");
             String callId = command.getData().get("callId");
-            String callType = command.getType() == ServerCommand.ServerCommandType.INITIATE_AUDIO_CALL ? "audio" : "video";
+            String callType = command.getType() == ServerCommandType.INITIATE_AUDIO_CALL ? "audio" : "video";
 
             ClientHandler targetHandler = AlanyaCentralServer.getClientHandler(targetUsername);
             if (targetHandler != null && targetHandler.isAuthenticated) {

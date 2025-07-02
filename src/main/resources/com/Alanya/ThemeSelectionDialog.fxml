@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.effect.DropShadow?>
+
+<VBox fx:id="dialogRoot" alignment="CENTER" prefHeight="300.0" prefWidth="400.0" spacing="15.0" style="-fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #ECEFF1, #CFD8DC); -fx-background-radius: 15;" xmlns="http://javafx.com/javafx/" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.Alanya.ThemeSelectionController">
+   <effect>
+      <DropShadow color="#00000040" radius="15" />
+   </effect>
+   <children>
+      <Label text="Personnaliser la discussion" textFill="#263238">
+         <font>
+            <Font name="System Bold" size="22.0" />
+         </font>
+      </Label>
+      
+      <Button onAction="#handleLightMode" prefHeight="50.0" prefWidth="250.0" style="-fx-background-color: white; -fx-background-radius: 25; -fx-border-color: #B0BEC5; -fx-border-radius: 25; -fx-cursor: hand;" text="☀️ Thème Jour">
+         <font><Font name="System Bold" size="15.0" /></font>
+         <effect><DropShadow color="#00000020" height="10" radius="4.5" width="10" /></effect>
+      </Button>
+      
+      <Button onAction="#handleDarkMode" prefHeight="50.0" prefWidth="250.0" style="-fx-background-color: #263238; -fx-text-fill: white; -fx-background-radius: 25; -fx-cursor: hand;" text="🌙 Thème Nuit">
+         <font><Font name="System Bold" size="15.0" /></font>
+         <effect><DropShadow color="#00000030" height="10" radius="4.5" width="10" /></effect>
+      </Button>
+      
+      <Button onAction="#handleCustomImage" prefHeight="50.0" prefWidth="250.0" style="-fx-background-color: #81D4FA; -fx-text-fill: #01579B; -fx-background-radius: 25; -fx-cursor: hand;" text="🖼️ Image Personnalisée">
+         <font><Font name="System Bold" size="15.0" /></font>
+         <effect><DropShadow color="#00000020" height="10" radius="4.5" width="10" /></effect>
+      </Button>
+   </children>
+   <padding>
+      <Insets bottom="25.0" left="25.0" right="25.0" top="25.0" />
+   </padding>
+</VBox>

@@ -1,5 +1,6 @@
 package com.Alanya;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
@@ -7,6 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
 
 public class Client {
@@ -80,16 +82,20 @@ public class Client {
     static String hashMotDePasse(String motDePasse) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(motDePasse.getBytes("UTF-8"));
-            StringBuilder hexString = new StringBuilder();
+            // Use UTF-8 encoding to ensure consistency across all systems
+            byte[] hash = digest.digest(motDePasse.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder(2 * hash.length);
             for (byte b : hash) {
                 String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
                 hexString.append(hex);
             }
             return hexString.toString();
-        } catch (NoSuchAlgorithmException | java.io.UnsupportedEncodingException e) {
-            throw new RuntimeException("Erreur de hachage du mot de passe", e);
+        } catch (NoSuchAlgorithmException e) {
+            // This should never happen with SHA-256
+            throw new RuntimeException("Critical error: SHA-256 algorithm not found.", e);
         }
     }
     
@@ -110,6 +116,7 @@ public class Client {
     }
 
     public ResultatOperation inscrire(Connection connexion) throws SQLException {
+        // 1. Validations initiales (inchangées)
         if (connexion == null) {
             return new ResultatOperation(false, "Erreur BDD: Connexion nulle.");
         }
@@ -119,24 +126,41 @@ public class Client {
         if (this.motDePasseHash == null) {
              return new ResultatOperation(false, "Mot de passe non défini pour l'inscription.");
         }
-
         boolean emailProvided = this.email != null && !this.email.trim().isEmpty();
         boolean phoneProvided = this.telephone != null && !this.telephone.trim().isEmpty();
-
         if (!emailProvided && !phoneProvided) {
             return new ResultatOperation(false, "Un email OU un numéro de téléphone est requis pour l'inscription.");
         }
+        // ... (autres validations de format pour email/téléphone) ...
 
-        if (emailProvided && !validerEmailFormat(this.email)) {
-            return new ResultatOperation(false, "Format d'email invalide.");
-        }
 
-        if (phoneProvided && !validerTelephoneFormatInscriptionCM(this.telephone)) {
-            return new ResultatOperation(false, "Format du numéro de téléphone invalide pour l'inscription. Utilisez +237xxxxxxxxx.");
-        }
+        // 2. NOUVELLE LOGIQUE : Génération et vérification de l'ID unique
+        long newId;
+        boolean idExists;
+        String checkIdSql = "SELECT id FROM Utilisateurs WHERE id = ?";
 
-        String sql = "INSERT INTO Utilisateurs (nom_utilisateur, mot_de_passe, email, telephone, statut, est_admin) VALUES (?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement pstmt = connexion.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        do {
+            // Génère un ID aléatoire dans la plage spécifiée
+            newId = ThreadLocalRandom.current().nextLong(100_000_000L, 1_000_000_000L);
+            
+            // Vérifie si cet ID est déjà utilisé
+            try (PreparedStatement pstmtCheck = connexion.prepareStatement(checkIdSql)) {
+                pstmtCheck.setLong(1, newId);
+                try (ResultSet rs = pstmtCheck.executeQuery()) {
+                    idExists = rs.next();
+                }
+            }
+        } while (idExists); // Boucle tant que l'ID généré existe déjà
+
+        // Assigne l'ID unique trouvé à l'instance actuelle
+        this.id = (int) newId;
+
+
+        // 3. MISE À JOUR : Préparation de la requête d'insertion avec l'ID
+        String sql = "INSERT INTO Utilisateurs (id, nom_utilisateur, mot_de_passe, email, telephone, statut, est_admin) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        
+        try (PreparedStatement pstmt = connexion.prepareStatement(sql)) {
+            // Vérifications d'unicité sur les autres champs (inchangées)
             if (checkIfExists(connexion, "nom_utilisateur", this.nomUtilisateur)) {
                 return new ResultatOperation(false, "Ce nom d'utilisateur existe déjà.");
             }
@@ -147,29 +171,28 @@ public class Client {
                 return new ResultatOperation(false, "Ce numéro de téléphone est déjà utilisé.");
             }
 
-            pstmt.setString(1, this.nomUtilisateur);
-            pstmt.setString(2, this.motDePasseHash);
-            pstmt.setString(3, emailProvided ? this.email : null);
-            pstmt.setString(4, phoneProvided ? this.telephone : null);
-            pstmt.setString(5, this.statut != null ? this.statut : "actif");
-            pstmt.setBoolean(6, this.estAdmin);
+            // Définition des paramètres de la requête
+            pstmt.setLong(1, this.id); 
+            pstmt.setString(2, this.nomUtilisateur);
+            pstmt.setString(3, this.motDePasseHash);
+            pstmt.setString(4, emailProvided ? this.email : null);
+            pstmt.setString(5, phoneProvided ? this.telephone : null);
+            pstmt.setString(6, this.statut != null ? this.statut : "actif");
+            pstmt.setBoolean(7, this.estAdmin);
 
             int affectedRows = pstmt.executeUpdate();
-            if (affectedRows == 0) {
+            
+            if (affectedRows > 0) {
+                // L'ID est déjà dans `this.id`, pas besoin de getGeneratedKeys
+                return new ResultatOperation(true, "Inscription réussie !", this);
+            } else {
                 return new ResultatOperation(false, "Échec de l'inscription, aucune ligne affectée.");
-            }
-
-            try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    this.id = generatedKeys.getInt(1);
-                    return new ResultatOperation(true, "Inscription réussie !", this);
-                } else {
-                    return new ResultatOperation(false, "Échec de l'inscription, impossible de récupérer l'ID.");
-                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            if (e.getMessage().toLowerCase().contains("unique constraint") || e.getMessage().toLowerCase().contains("duplicate entry")) {
+            // Gestion des erreurs d'unicité de la base de données (inchangée)
+            if (e.getMessage().toLowerCase().contains("duplicate entry")) {
+                 if (e.getMessage().contains("PRIMARY")) return new ResultatOperation(false, "Erreur critique : Conflit d'ID malgré la vérification.");
                  if (e.getMessage().contains("nom_utilisateur")) return new ResultatOperation(false, "Ce nom d'utilisateur existe déjà (erreur BD).");
                  if (emailProvided && e.getMessage().contains("email")) return new ResultatOperation(false, "Cet email est déjà utilisé (erreur BD).");
                  if (phoneProvided && e.getMessage().contains("telephone")) return new ResultatOperation(false, "Ce numéro de téléphone est déjà utilisé (erreur BD).");

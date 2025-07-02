@@ -112,17 +112,16 @@
 .chat-container {
     -fx-background-color: #FFFFFF; /* Fond Blanc Vif pour la zone de chat */
 }
-
 .chat-header {
-    -fx-background-color: #FFFFFF; /* Fond blanc pour l'en-tête */
+    -fx-background-color: #F0F0F0; /* Couleur de fond claire par défaut */
     -fx-padding: 10px 15px;
-    -fx-border-color: transparent transparent #BDC3C7 transparent; /* Bordure inférieure grise */
+    -fx-border-color: transparent transparent #DCDCDC transparent;
     -fx-border-width: 1px;
 }
-.chat-header .label { /* Nom du contact dans l'en-tête */
+.chat-header .label {
     -fx-font-size: 1.3em;
     -fx-font-weight: bold;
-    -fx-text-fill: #2C3E50; /* Texte en couleur foncée */
+    -fx-text-fill: #2C3E50; /* Texte foncé pour le thème clair */
 }
 .icons-button {
     -fx-background-color: transparent;
@@ -178,13 +177,10 @@
     -fx-background-color: transparent; /* Le fond vient du chat-container */
     -fx-padding: 0; /* Pas de padding pour le scrollpane lui-même */
 }
-.messages-container { /* VBox contenant les bulles de message */
-    -fx-padding: 15px; /* Espacement autour des messages */
-    -fx-spacing: 10px; /* Espacement entre les bulles de message */
-
-	-fx-background-image: url("imgdisc.png");
-	-fx-background-size: 80%;
-	-fx-min-height: 500px; 
+.messages-container {
+    -fx-padding: 15px;
+    -fx-spacing: 10px;
+    -fx-background-color: white; 
 }
 
 /* Styles pour les bulles de message */
@@ -644,15 +640,66 @@
     /* Styles spécifiques si besoin, par exemple: */
     /* -fx-font-weight: bold; */
 }
+/* --- GESTION DES THÈMES --- */
 
-#menuItemModifierArrierePlan {
-    /* Styles spécifiques */
+/* 1. Thème JOUR (Light) - C'EST LE THÈME PAR DÉFAUT */
+.theme-light {
+    -fx-background-image: url("imgdisc.png");
+    -fx-background-size: cover; /* Utiliser 'cover' pour remplir tout l'espace */
+    -fx-background-position: center;
+    -fx-background-repeat: no-repeat;
+}
+/* Pas besoin de style pour .theme-light .chat-header, il utilise le style .chat-header par défaut */
+
+
+/* 2. Thème SOMBRE (Dark) */
+.theme-dark {
+    -fx-background-image: none;
+    -fx-background-color: #111B21; /* Fond général sombre */
 }
 
-#menuItemThemeSombre {
-    /* Styles spécifiques */
+.theme-dark .btn-icon {
+    -fx-text-fill: #AEBAC1;
+}
+.theme-dark .chat-header {
+    -fx-background-color: #2C3E50; /* Fond sombre pour l'en-tête */
+    -fx-border-color: transparent transparent #1A242E transparent;
 }
 
-#menuItemServiceclient {
-    /* Styles spécifiques */
+.theme-dark .chat-header .label {
+    -fx-text-fill: #ECF0F1; /* Texte clair pour l'en-tête */
+}
+
+.theme-dark .messages-container {
+    -fx-background-image: none; /* On s'assure de retirer l'image de fond */
+    -fx-background-color: #1A242E; /* Fond très sombre */
+}
+.theme-dark .message-input-container {
+     -fx-background-color: #202C33; /* Fond sombre pour la barre de saisie */
+     -fx-border-color: #2A3942 transparent transparent transparent;
+}
+.theme-dark .message-bubble-incoming {
+    -fx-background-color: #2C3E50;
+    -fx-text-fill: white;
+    -fx-border-color: #34495E;
+}
+.theme-dark .message-bubble-outgoing {
+    -fx-background-color: #054D44;
+    -fx-text-fill: white;
+}
+.theme-dark .message-field {
+    -fx-control-inner-background: #2A3942; /* Le fond de la zone de saisie */
+    -fx-background-color: #2A3942;      /* S'assure que tout le contrôle est sombre */
+    -fx-text-fill: #EAECEE;              /* Texte clair */
+    -fx-prompt-text-fill: #8696A0;      /* Placeholder gris clair */
+    -fx-border-color: #374248;
+}
+.theme-dark .message-timestamp {
+    -fx-text-fill: #AAAAAA;
+}
+
+/* 3. Thème IMAGE PERSONNALISÉE */
+.theme-custom-image .messages-container {
+    -fx-background-image: none; /* On retire l'image par défaut pour la remplacer */
+    -fx-background-color: transparent; /* Rend le conteneur transparent pour voir l'image du parent */
 }

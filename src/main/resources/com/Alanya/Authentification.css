@@ -4,7 +4,7 @@
 
 /* --- Conteneur Racine (StackPane) --- */
 .auth-root {
-    -fx-background-color: #34495E; /* Fond sombre par défaut si l'image ne charge pas */
+    -fx-background-color: #FFFFFF; /* Fond sombre par défaut si l'image ne charge pas */
 }
 
 /* --- Conteneur du Formulaire (VBox) --- */
@@ -13,7 +13,7 @@
     -fx-padding: 40px;
     -fx-spacing: 20px;
     /* Fond semi-transparent avec bordure subtile */
-    -fx-background-color: rgba(44, 62, 80, 0.90); /* #2c3e50 avec 90% d'opacité */
+    -fx-background-color:#FFFFFF; /* #2c3e50 avec 90% d'opacité */
     -fx-background-radius: 20px;
     -fx-border-radius: 20px;
     -fx-border-color: rgba(52, 152, 219, 0.2); /* #3498DB avec 20% d'opacité */
@@ -25,7 +25,7 @@
 .auth-title {
     -fx-font-size: 26px;
     -fx-font-weight: bold;
-    -fx-text-fill: white;
+    -fx-text-fill: black;
 }
 
 .auth-subtitle {
@@ -69,7 +69,7 @@
 }
 
 .text-field-styled {
-    -fx-text-fill: white;
+    -fx-text-fill: black;
     -fx-prompt-text-fill: #95a5a6;
 }
 
@@ -155,7 +155,7 @@
 
 /* Style du "pouce" (la partie que l'on fait glisser) */
 .form-scroll-pane .scroll-bar .thumb {
-    -fx-background-color: rgba(52, 152, 219, 0.5); /* Couleur bleue (#3498DB) semi-transparente */
+    -fx-background-color: #FFFFFF; /* Couleur bleue (#3498DB) semi-transparente */
     -fx-background-insets: 2;
     -fx-background-radius: 4px;
 }

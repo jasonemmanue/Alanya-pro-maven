@@ -42,79 +42,75 @@ public class NotificationService {
     }
 
     public void onMessageReceived(Message message, int currentUserId, Integer contactCurrentlyBeingViewedId, int senderId) {
-        if (senderId == currentUserId) { // Message envoyé par l'utilisateur actuel à lui-même (ou écho) // 
-            return;
-        }
-        try {
-            if (message.getDatabaseId() > 0) { // S'assurer que le message a un ID de la BDD
-                // Ici, currentUserId EST le destinataire du message.
-                // senderId est celui qui a envoyé le message.
-                messageDAO.updateMessageReadStatus(message.getDatabaseId(), 1); // 1 = Reçu par currentUserId
-                message.setReadStatus(1); // Mettre à jour l'objet en mémoire aussi
-                System.out.println("NotificationService: Message ID " + message.getDatabaseId() + " de " + senderId + " marqué comme Reçu (statut 1) pour " + currentUserId);
-
-                // TODO: Envoyer un acquittement "reçu" à l'expéditeur (senderId) via P2P/Serveur
-                // Ex: if(mainController != null) mainController.sendDeliveryReceipt(senderId, message.getDatabaseId());
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            System.err.println("NotificationService: Erreur lors du marquage du message ID " + message.getDatabaseId() + " comme Reçu.");
+        if (senderId == currentUserId) {
+            return; // Ignorer les messages de soi-même
         }
 
-        // Vérifier si la discussion avec cet expéditeur (senderId) est déjà ouverte
+        // Vérifier si la discussion avec l'expéditeur est déjà ouverte
         if (contactCurrentlyBeingViewedId != null && contactCurrentlyBeingViewedId == senderId) {
-            // Si la discussion est ouverte, marquer immédiatement comme "Lu" (2)
+            // CAS 1: La conversation est ouverte.
             try {
+                // On marque le message comme LU (statut 2)
                 if (message.getDatabaseId() > 0) {
-                    // currentUserId est le destinataire qui a la discussion ouverte avec senderId
-                    messageDAO.updateMessageReadStatus(message.getDatabaseId(), 2); // 2 = Lu par currentUserId
+                    messageDAO.updateMessageReadStatus(message.getDatabaseId(), 2);
                     message.setReadStatus(2);
-                    System.out.println("NotificationService: Message ID " + message.getDatabaseId() + " de " + senderId + " marqué comme Lu (statut 2) car discussion ouverte.");
-                    
-                    // TODO: Envoyer un acquittement "lu" à l'expéditeur (senderId) via P2P/Serveur
-                    // Ex: if(mainController != null) mainController.sendReadReceipt(senderId, message.getDatabaseId(), 2);
                 }
-                unreadMessagesCount.put(senderId, 0); // Réinitialiser le compteur de non lus en mémoire // 
+                // On s'assure que le compteur en mémoire est à zéro
+                unreadMessagesCount.put(senderId, 0);
             } catch (SQLException e) {
-                e.printStackTrace(); // 
-                System.err.println("NotificationService: Erreur lors du marquage des messages comme lus pour " + senderId); // 
+                System.err.println("NotificationService: Erreur lors du marquage du message comme Lu.");
+                e.printStackTrace();
             }
-            
+
+            // On affiche le message directement dans la fenêtre de chat
             if (messageDisplayCallback != null) {
-                // Le 'false' indique que c'est un message entrant
                 Platform.runLater(() -> messageDisplayCallback.accept(message, false));
             }
-            unreadMessagesCount.put(senderId, 0);
-            
-            
         } else {
-            // La discussion n'est pas ouverte, incrémenter le compteur de messages non lus
+            // CAS 2: La conversation N'EST PAS ouverte.
+            try {
+                // On marque le message comme REÇU (statut 1)
+                if (message.getDatabaseId() > 0) {
+                    messageDAO.updateMessageReadStatus(message.getDatabaseId(), 1);
+                    message.setReadStatus(1);
+                }
+            } catch (SQLException e) {
+                System.err.println("NotificationService: Erreur lors du marquage du message comme Reçu.");
+                e.printStackTrace();
+            }
+            
+            // On incrémente le compteur de messages non lus en mémoire
             int newCount = unreadMessagesCount.getOrDefault(senderId, 0) + 1;
             unreadMessagesCount.put(senderId, newCount);
             System.out.println("NotificationService: Message non lu reçu de " + senderId + ". Nouveau compte: " + newCount);
         }
-        // Toujours rafraîchir l'UI pour ce contact pour mettre à jour le badge/statut
+
+        // --- CORRECTION FINALE ET CRUCIALE ---
+        // Dans tous les cas (conversation ouverte ou non), on notifie l'interface
+        // pour qu'elle rafraîchisse la liste des contacts. Cela mettra à jour le
+        // badge de notification (soit à 0, soit au nouveau compte).
         updateContactNotificationUI(senderId);
     }
-
     public void onDiscussionOpened(int contactIdOpened, int currentUserId) {
         try {
-            // Marquer tous les messages de contactIdOpened (expéditeur) à currentUserId (destinataire) comme lus (statut 2)
+            // Met à jour la BDD pour marquer les messages comme lus (statut 2)
             messageDAO.markAllMessagesFromContactAsRead(contactIdOpened, currentUserId, 2);
 
-            unreadMessagesCount.put(contactIdOpened, 0); // Réinitialiser le compteur en mémoire // 
-            updateContactNotificationUI(contactIdOpened); // Mettre à jour l'UI pour ce contact // 
-            System.out.println("NotificationService: Discussion ouverte avec " + contactIdOpened + ". Messages marqués comme lus (statut 2)."); // 
+            // Réinitialise le compteur de messages non lus pour ce contact DANS LA MÉMOIRE du service
+            unreadMessagesCount.put(contactIdOpened, 0);
 
-            // TODO: Envoyer des acquittements "lu" pour tous les messages concernés à l'expéditeur (contactIdOpened)
-            // Ex: if(mainController != null) mainController.sendBulkReadReceipts(contactIdOpened, currentUserId);
+            // --- CORRECTION CLÉ ---
+            // Force le rafraîchissement de la liste des contacts dans l'interface graphique.
+            // Cela mettra à jour le badge de notification pour qu'il disparaisse.
+            updateContactNotificationUI(contactIdOpened);
+
+            System.out.println("NotificationService: Discussion avec " + contactIdOpened + " ouverte. Messages marqués comme lus.");
 
         } catch (SQLException e) {
-            e.printStackTrace(); // 
-            System.err.println("NotificationService: Erreur lors du marquage des messages comme lus pour " + contactIdOpened + " lors de l'ouverture de la discussion."); // 
+            e.printStackTrace();
+            System.err.println("NotificationService: Erreur lors du marquage des messages comme lus pour " + contactIdOpened);
         }
     }
-
     public int getUnreadCount(int contactId) {
         return unreadMessagesCount.getOrDefault(contactId, 0);
     }

@@ -13,38 +13,35 @@ import java.util.Map;
 
 public class MessageDAO {
 
-    public long saveMessage(Message message, int senderId, int receverid) throws SQLException {
-        String sql = "INSERT INTO Messages (senderid, receverid, contenu, date_envoi, lu, nom_fichier, type_fichier, taille_fichier, chemin_local_fichier, statut_lecture) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+	public long saveMessage(Message message, int senderId, int receiverId) throws SQLException {
+        // CORRECTION : La requête inclut maintenant le chemin local dès le départ.
+        String sql = "INSERT INTO Messages (sender_id, receiver_id, contenu, date_envoi, statut_lecture, nom_fichier, type_fichier, taille_fichier, chemin_local_fichier, fichier_donnees) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         long messageId = -1;
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             pstmt.setInt(1, senderId);
-            pstmt.setInt(2, receverid);
-
-            // --- MODIFICATION : Le contenu est maintenant chiffré avant sauvegarde ---
+            pstmt.setInt(2, receiverId);
             pstmt.setString(3, EncryptionService.encrypt(message.getContent()));
-
-            try {
-                pstmt.setTimestamp(4, Timestamp.valueOf(message.getTimestamp()));
-            } catch (Exception e) {
-                pstmt.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
-            }
-
-            pstmt.setBoolean(5, false); // lu
-            pstmt.setInt(10, message.getReadStatus()); // statut_lecture
+            pstmt.setTimestamp(4, Timestamp.valueOf(message.getTimestamp()));
+            pstmt.setInt(5, message.getReadStatus());
 
             AttachmentInfo attachment = message.getAttachmentInfo();
             if (attachment != null) {
                 pstmt.setString(6, attachment.getFileName());
                 pstmt.setString(7, attachment.getFileType());
                 pstmt.setLong(8, attachment.getFileSize());
-                pstmt.setString(9, attachment.getLocalPath()); // Chemin local de l'expéditeur
+                // --- LOGIQUE CLÉ ---
+                // On sauvegarde le chemin de l'expéditeur
+                pstmt.setString(9, attachment.getLocalPath());
+                // On sauvegarde les données binaires du fichier pour le transfert
+                pstmt.setBytes(10, attachment.getFileData());
             } else {
                 pstmt.setNull(6, Types.VARCHAR);
                 pstmt.setNull(7, Types.VARCHAR);
                 pstmt.setNull(8, Types.BIGINT);
                 pstmt.setNull(9, Types.VARCHAR);
+                pstmt.setNull(10, Types.BLOB);
             }
 
             if (pstmt.executeUpdate() > 0) {
@@ -58,29 +55,27 @@ public class MessageDAO {
         }
         return messageId;
     }
-
-    public void updateMessageReadStatus(long messageId, int newStatus) throws SQLException {
-        boolean isNowReadForOldLuColumn = (newStatus == 2);
-        String sql = "UPDATE Messages SET statut_lecture = ?, lu = ? WHERE id = ?";
-        
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, newStatus);
-            pstmt.setBoolean(2, isNowReadForOldLuColumn);
-            pstmt.setLong(3, messageId);
-            pstmt.executeUpdate();
-        }
-    }
+	public void updateMessageReadStatus(long messageId, int newStatus) throws SQLException {
+	    String sql = "UPDATE Messages SET statut_lecture = ? WHERE id = ?";
+	    
+	    try (Connection conn = DatabaseConnection.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+	        pstmt.setInt(1, newStatus);
+	        pstmt.setLong(2, messageId);
+	        pstmt.executeUpdate();
+	    }
+	}
     
-	public List<Message> getMessageHistory(int userId1, int userId2) throws SQLException {
+    public List<Message> getMessageHistory(int userId1, int userId2) throws SQLException {
         List<Message> history = new ArrayList<>();
-        String sql = "SELECT M.id as message_id, M.senderid, M.receverid, M.contenu, M.date_envoi, M.lu, M.statut_lecture, " +
+        // CORRECTION : M.senderid -> M.sender_id, M.receverid -> M.receiver_id
+        String sql = "SELECT M.id as message_id, M.sender_id, M.receiver_id, M.contenu, M.date_envoi, M.statut_lecture, " +
                      "U1.nom_utilisateur AS sender_name, U2.nom_utilisateur AS receiver_name, " +
                      "M.nom_fichier, M.type_fichier, M.taille_fichier, M.chemin_local_fichier " +
                      "FROM Messages M " +
-                     "JOIN Utilisateurs U1 ON M.senderid = U1.id " +
-                     "JOIN Utilisateurs U2 ON M.receverid = U2.id " +
-                     "WHERE (M.senderid = ? AND M.receverid = ?) OR (M.senderid = ? AND M.receverid = ?) " +
+                     "JOIN Utilisateurs U1 ON M.sender_id = U1.id " +
+                     "JOIN Utilisateurs U2 ON M.receiver_id = U2.id " +
+                     "WHERE (M.sender_id = ? AND M.receiver_id = ?) OR (M.sender_id = ? AND M.receiver_id = ?) " +
                      "ORDER BY M.date_envoi ASC";
 
         try (Connection conn = DatabaseConnection.getConnection();
@@ -92,13 +87,11 @@ public class MessageDAO {
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    // --- MODIFICATION : Le contenu est déchiffré après récupération ---
                     String decryptedContent = EncryptionService.decrypt(rs.getString("contenu"));
-
                     Message msg = new Message(
                         rs.getString("sender_name"),
                         rs.getString("receiver_name"),
-                        decryptedContent, // Utilisation du contenu déchiffré
+                        decryptedContent,
                         rs.getTimestamp("date_envoi").toLocalDateTime().format(Message.formatter)
                     );
                     msg.setDatabaseId(rs.getLong("message_id"));
@@ -120,15 +113,16 @@ public class MessageDAO {
         }
         return history;
     }
-
     public Map<Integer, Integer> getUnreadMessageCountsPerSender(int currentUserId) throws SQLException {
         Map<Integer, Integer> counts = new HashMap<>();
-        String sql = "SELECT senderid, COUNT(*) as unread_count FROM Messages WHERE receverid = ? AND statut_lecture < 2 GROUP BY senderid";
+        // CORRECTION : senderid -> sender_id, receverid -> receiver_id
+        String sql = "SELECT sender_id, COUNT(*) as unread_count FROM Messages WHERE receiver_id = ? AND statut_lecture < 2 GROUP BY sender_id";
+
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, currentUserId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    counts.put(rs.getInt("senderid"), rs.getInt("unread_count"));
+                    counts.put(rs.getInt("sender_id"), rs.getInt("unread_count"));
                 }
             }
         }
@@ -136,27 +130,27 @@ public class MessageDAO {
     }
 
     public void markAllMessagesFromContactAsRead(int senderId, int receiverId, int newStatus) throws SQLException {
-        boolean isNowReadForOldLuColumn = (newStatus == 2);
-        String sql = "UPDATE Messages SET statut_lecture = ?, lu = ? WHERE senderid = ? AND receverid = ? AND statut_lecture < ?";
+        String sql = "UPDATE Messages SET statut_lecture = ? WHERE sender_id = ? AND receiver_id = ? AND statut_lecture < ?";
+        
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, newStatus);
-            pstmt.setBoolean(2, isNowReadForOldLuColumn);
-            pstmt.setInt(3, senderId);
-            pstmt.setInt(4, receiverId);
-            pstmt.setInt(5, newStatus);
+            pstmt.setInt(2, senderId);
+            pstmt.setInt(3, receiverId);
+            pstmt.setInt(4, newStatus);
             pstmt.executeUpdate();
         }
     }
     
     public List<Message> getOfflineMessagesForUser(int userId) throws SQLException {
         List<Message> offlineMessages = new ArrayList<>();
-        String sql = "SELECT M.id as message_id, M.contenu, M.date_envoi, M.lu, M.statut_lecture, " +
+        // CORRECTION : M.receverid -> M.receiver_id
+        String sql = "SELECT M.id as message_id, M.contenu, M.date_envoi, M.statut_lecture, " +
                      "U1.nom_utilisateur AS sender_name, U2.nom_utilisateur AS receiver_name, " +
-                     "M.nom_fichier, M.type_fichier, M.taille_fichier, M.chemin_local_fichier " +
+                     "M.nom_fichier, M.type_fichier, M.taille_fichier, M.chemin_local_fichier, M.fichier_donnees " +
                      "FROM Messages M " +
-                     "JOIN Utilisateurs U1 ON M.senderid = U1.id " +
-                     "JOIN Utilisateurs U2 ON M.receverid = U2.id " +
-                     "WHERE M.receverid = ? AND M.statut_lecture = 0 " +
+                     "JOIN Utilisateurs U1 ON M.sender_id = U1.id " +
+                     "JOIN Utilisateurs U2 ON M.receiver_id = U2.id " +
+                     "WHERE M.receiver_id = ? AND M.statut_lecture = 0 " +
                      "ORDER BY M.date_envoi ASC";
 
         try (Connection conn = DatabaseConnection.getConnection();
@@ -164,13 +158,11 @@ public class MessageDAO {
             pstmt.setInt(1, userId);
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
-                // --- MODIFICATION : Le contenu est déchiffré après récupération ---
                 String decryptedContent = EncryptionService.decrypt(rs.getString("contenu"));
-
-                 Message msg = new Message(
+                Message msg = new Message(
                     rs.getString("sender_name"),
                     rs.getString("receiver_name"),
-                    decryptedContent, // Utilisation du contenu déchiffré
+                    decryptedContent,
                     rs.getTimestamp("date_envoi").toLocalDateTime().format(Message.formatter)
                 );
                 msg.setDatabaseId(rs.getLong("message_id"));
@@ -178,7 +170,17 @@ public class MessageDAO {
 
                 String nomFichier = rs.getString("nom_fichier");
                 if (nomFichier != null) {
-                    msg.setAttachmentInfo(new AttachmentInfo(nomFichier, rs.getString("type_fichier"), rs.getLong("taille_fichier"), rs.getString("chemin_local_fichier")));
+                    AttachmentInfo attachment = new AttachmentInfo(
+                        nomFichier,
+                        rs.getString("type_fichier"),
+                        rs.getLong("taille_fichier"),
+                        rs.getString("chemin_local_fichier")
+                    );
+                    byte[] fileData = rs.getBytes("fichier_donnees");
+                    if (fileData != null) {
+                        attachment.setFileData(fileData);
+                    }
+                    msg.setAttachmentInfo(attachment);
                 }
                 offlineMessages.add(msg);
             }
@@ -186,6 +188,20 @@ public class MessageDAO {
         return offlineMessages;
     }
     
+    
+    public void finalizeFileMessageDelivery(long messageId, int newStatus, String receiverLocalPath) throws SQLException {
+        String sql = "UPDATE Messages SET statut_lecture = ?, chemin_local_fichier = ?, fichier_donnees = NULL WHERE id = ?";
+        
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, newStatus);
+            pstmt.setString(2, receiverLocalPath); // On écrase le chemin de l'expéditeur par celui du destinataire
+            pstmt.setLong(3, messageId);
+            pstmt.executeUpdate();
+            System.out.println("Finalisation du message ID " + messageId + ". Fichier binaire supprimé, chemin local mis à jour.");
+        }
+    }
+
     public void updateMessagesStatusToDelivered(List<Long> messageIds) throws SQLException {
         if (messageIds == null || messageIds.isEmpty()) {
             return;
